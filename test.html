@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<head>
+<script src="js/math.js"></script>
+<script src="js/menu.js"></script>
+<link rel="stylesheet" type="text/css" href="css/test.css">
+<script src="js/jquery.js"></script>
+<script src="js/jquery.sidr.min.js"></script>
+    <script src="js/jquery.mobile.js"></script>
+<script>
+
+    $(document).ready(function(){
+        $('.title').click(function(){
+            $(this).nextUntil('.title').slideToggle(1000);
+        });
+    });
+
+    $(document).ready(function(){
+        $('#menutoggle').click(function(){
+                $('#menucontainer').toggle(1000);
+        });
+    });
+
+    $(document).ready(function() {
+        $('#simple-menu').sidr();
+    });
+
+</script>
+    <title>Solves All</title>
+</head>
+<body>
+<div id="sidr">
+
+    <ul>
+        <li>
+            <a href="#" onclick="showAll()">All</a>
+        </li>
+        <li>
+            <a href="#" onclick="showAlgebra()">Algebra</a>
+        </li>
+        <li>
+            <a href="#" onclick="showPhysics()">Physics</a>
+        </li>
+        <li>
+            <a href="#" onclick="showChemistry()">Chemistry</a>
+        </li>
+    </ul>
+
+</div>
+<div id="allContent">
+
+        <a id="simple-menu" href="#sidr">
+        <img id="menutoggle" src="img/menu.svg">
+        </a>
+
+
+
+
+
+        <!--Solve:Quadratic Formula-->
+        <h3 id="qF" class='title algebra'> Quadratic Formula </h3>
+        <div id='quadX' class="content">
+
+            b: <input id="b" type="text"><br>
+            a: <input id="a" type="text"><br>
+            c: <input id="c" type="text"><br>
+
+            <button type="button" onclick='quadraticX()'>Solve for x</button>
+            <button type="button" onclick='clearQuadratic()'>Clear</button><br>
+            x: <input id='x1' type='text'><br>
+            or<br>
+            x: <input id='x2' type='text'>
+
+        </div>
+
+        <!--Solve:Reference Angle-->
+        <h3 id="rA" class='title algebra'> Reference Angle </h3>
+        <div id='referenceAngle' class="content">
+
+            Angle: <input id='angle' type='text'><br>
+            <button type="button" onclick='refAngle()'>Find Reference Angle</button>
+            <button type="button" onclick='clearRefAng()'>Clear</button><br>
+            Reference Angle: <input id='refAngle' type='text'>
+
+        </div>
+
+        <!--Solve:Slope Intercept Formula-->
+        <h3 id="sIY" class='title algebra'> Slope Intercept Formula</h3>
+        <div id='slopeIntercept' class="content">
+
+            m: <input id='slopeM' type='text'><br>
+            x: <input id='slopeX' type='text'><br>
+            b: <input id='slopeB' type='text'><br>
+            y: <input id='slopeY' type='text'><br>
+            <button type="button" onclick='solveSlopeIntercept()'>Solve</button>
+            <button type="button" onclick='clearSlopeIntercept()'>Clear</button><br>
+            <span id="slopeVar"></span> <input id='slopeAns' type='text'>
+
+        </div>
+
+        <!--Solve:Point Slope-->
+        <h3 id="pS" class='title algebra'> Point Slope </h3>
+        <div id='pointSlope' class="content">
+
+            Coordinates for Point Number 1<br>
+            x1: <input id='pS_X1' type='text'><br>
+            y1: <input id='pS_Y1' type='text'><br>
+            Coordinates for Point Number 2<br>
+            x2: <input id='pS_X2' type='text'><br>
+            y2: <input id='pS_Y2' type='text'><br>
+            <button type="button" onclick='pointSlope()'>Find m</button>
+            <button type="button" onclick='clearPointSlope()'>Clear</button><br>
+            m: <input id='pS_M' type='text'>
+
+        </div>
+
+        <!--Solve:Distance Between Two Linear Points-->
+        <h3 id="dtp" class='title algebra'> Distance Between Two Points </h3>
+        <div id='distanceTwoPoints' class="content">
+
+            Coordinates for Point Number 1<br>
+            x1: <input id='dtp_X1' type='text'><br>
+            y1: <input id='dtp_Y1' type='text'><br>
+            Coordinates for Point Number 2<br>
+            x2: <input id='dtp_X2' type='text'><br>
+            y2: <input id='dtp_Y2' type='text'><br>
+            <button type="button" onclick='DTP()'>Find distance</button>
+            <button type="button" onclick='clearDTP()'>Clear</button><br>
+            Distance: <input id='dtp_D' type='text'>
+
+        </div>
+
+        <!--Factorial-->
+        <h3 id="fac" class='title algebra'> Factorial </h3>
+        <div id='factorial' class="content">
+
+            Number to Calculate Factorial:<br>
+            <input id='f_N'type= 'text'><br>
+            <button type="button" onclick='factorial()'>Find Factorial</button>
+            <button type="button" onclick='clearfactorial()'>Clear</button><br>
+            Factorial: <input id ='f_Ans' type='text'>
+
+        </div>
+
+        <!--Solve:Degrees and Radians-->
+        <h3 id="dr" class='title physics'> Degrees/Radians Converter </h3>
+        <div id='degreestoRadians' class="content">
+
+            Degrees: <input id='degRadD' type='text'><br>
+            <button type="button" onclick='solveDegreeRadian()'>Convert</button>
+            <button type="button" onclick='clearDegRad()'>Clear</button><br>
+            Radians: <input id='degRadR' type='text'>
+
+        </div>
+
+        <!--Solve:Percentage Error---->
+        <h3 id="pE" class='title chemistry'> Percentage Error </h3>
+        <div id='percentageError' class="content">
+
+            Approximate Value: <input id='pEaV' type='text'><br>
+            Exact Value: <input name='eV' id='pEeV' type='text'><br>
+            <button type="button" onclick='percentageError()'>Find Percentage Error</button>
+            <button type="button" onclick='clearPercentageError()'>Clear</button><br>
+            Percentage Error: <input id='pEpE' type='text'>
+
+        </div>
+
+        <!--Solve:Interest-->
+        <h3 id="int" class='title algebra'> Interest </h3>
+        <div id='interest' class="content">
+
+            Days: <input id='i_D' type='text'><br>
+            Months: <input id='i_M' type='text'><br>
+            <button type="button" onclick='InterestTimeConverter()'>Solve</button>
+            <button type="button" onclick='clearInterestTimeConverter()'>Clear</button><br>
+            Time in years: <input id='interestTimeAns' type='text'><br>
+
+            Principal: <input id='i_P' type='text'><br>
+            Rate Percentage: <input id='i_R' type='text'><br>
+            Time in years: <input id='i_Tiy' type='text'><br>
+            Interest Earned: <input id='i_I' type='text'><br>
+            <button type="button" onclick='solveInterest()'>Solve</button>
+            <button type="button" onclick='clearSolveInterest()'>Clear</button><br>
+            <span id="interestVar"></span> <input id='interestAns' type='text'>
+
+        </div>
+
+        <!--Solve:Distance Rate Time-->
+        <h3 id="drt" class='title physics'> Distance Rate Time </h3>
+        <div id='DistanceRateTime_Rate' class="content">
+
+            ENTER RATE OF SPEED:<br>
+            Feet: <input id='drt_F' type='text'><br>
+            Yards: <input id='drt_Y' type='text'><br>
+            Miles: <input id='drt_Miles' type='text'><br>
+            Per<br>
+            Seconds: <input id='drt_S' type='text'><br>
+            Minutes: <input id='drt_M' type='text'><br>
+            Hours: <input id='drt_H' type='text'><br>
+            <button type="button" onclick='DRT_RateConverter()'>Input</button>
+            <button type="button" onclick='clearDRT_RateConverter()'>Clear</button><br>
+
+        </div>
+
+        <div id='DistanceRateTime_Time' class="content">
+
+            ENTER TIME:<br>
+            Seconds: <input id='drt_TS' type='text'><br>
+            Minutes: <input id='drt_TM' type='text'><br>
+            Hours: <input id='drt_TH' type='text'><br>
+            <button type="button" onclick='DRT_TimeConverter()'>Input</button>
+            <button type="button" onclick='clearDRT_TimeConverter()'>Clear</button><br>
+
+        </div>
+
+        <div id='DistanceRateTime_Distance' class="content">
+
+            ENTER DISTANCE:<br>
+            Feet: <input id='drt_DF' type='text'><br>
+            Yards: <input id='drt_DY' type='text'><br>
+            Miles: <input id='drt_DM' type='text'><br>
+            <button type="button" onclick='DRT_DistanceConverter()'>Input</button>
+            <button type="button" onclick='clearDRT_DistanceConverter()'>Clear</button><br>
+
+        </div>
+
+        <div id='DistanceRateTime' class="content">
+
+            CALCULATIONS:<br>
+            Distance(miles): <input id='drt_D' type='text'><br>
+            Rate(mph): <input id='drt_R' type='text'><br>
+            Time(hours): <input id='drt_T' type='text'><br>
+            <button type="button" onclick='solveDRT()'>Solve</button>
+            <button type="button" onclick='clearSolveDRT()'>Clear</button><br>
+            <span id="drtVar"></span> <input id='drtAns' type='text'>
+
+        </div>
+
+        <!--Solve:Temperature Converter-->
+        <h3 id="cfk" class='title' > Celsius Fahreheit Kelvin </h3>
+        <div id='cfkTemperature' class="content">
+
+            Celsius: <input id='cfk_c' type='text'><br>
+            Fahreheit: <input id='cfk_f' type='text'><br>
+            Kelvin: <input id='cfk_k' type='text'><br>
+            <button type="button" onclick='cfk_TemperatureConverter()'>Solve</button>
+            <button type="button" onclick='clearcfk_TemperatureConverter()'>Clear</button><br>
+
+        </div>
+
+    </div>
+
+
+
+
+
+</body>
+</html>
