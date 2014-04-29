@@ -1,0 +1,29 @@
+{
+  "name": "mathjs",
+  "version": "0.21.0",
+  "main": "./dist/math.js",
+  "ignore": [
+    "coverage",
+    "img",
+    "misc",
+    "node_modules",
+    "test",
+    "tools",
+    ".gitignore",
+    ".npmignore",
+    ".travis.yml",
+    "gulpfile.js",
+    "component.json",
+    "package.json"
+  ],
+  "homepage": "https://github.com/josdejong/mathjs",
+  "_release": "0.21.0",
+  "_resolution": {
+    "type": "version",
+    "tag": "v0.21.0",
+    "commit": "15d500acf17ed209d541a1c9813fe9efbf2ab654"
+  },
+  "_source": "git://github.com/josdejong/mathjs.git",
+  "_target": "*",
+  "_originalSource": "git://github.com/josdejong/mathjs.git"
+}
