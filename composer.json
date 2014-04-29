@@ -1,8 +1,0 @@
-{
-    "name": "solvesall/solvesall",
-    "description": "A javascript application with the goal of solving all math problems simply and quickly",
-    "require": {
-        "php": ">=5.3.0",
-        "mathjs/mathjs": "0.21.*"
-    }
-}
