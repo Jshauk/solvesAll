@@ -6,6 +6,7 @@
         "url": "https://github.com/Jshauk/solvesAll"
     },
     "dependencies": {
-        "mathjs": "git://github.com/josdejong/mathjs.git"
+        "mathjs": "git://github.com/josdejong/mathjs.git",
+        "mmenu": "git://github.com/BeSite/jQuery.mmenu.git"
     }
 }

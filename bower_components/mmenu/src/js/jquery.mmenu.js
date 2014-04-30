@@ -1,5 +1,5 @@
 /*	
- * jQuery mmenu v4.2.2
+ * jQuery mmenu v4.2.5
  * @requires jQuery 1.7.0 or later
  *
  * mmenu.frebsite.nl
@@ -16,7 +16,7 @@
 (function( $ ) {
 
 	var _PLUGIN_	= 'mmenu',
-		_VERSION_	= '4.2.2';
+		_VERSION_	= '4.2.5';
 
 
 	//	Plugin already excists
@@ -365,9 +365,8 @@
 				}
 			);
 
-			//	Prepend to body
-			this.$menu
-				.prependTo( 'body' )
+			//	Inject to body
+			this.$menu[ this.conf.menuInjectMethod + 'To' ]( this.conf.menuWrapperSelector )
 				.addClass( _c.menu );
 
 			//	Add direction class
@@ -517,9 +516,11 @@
 				//	Add opened-classes
 				var $selected = $('.' + _c.list + ' > li.' + _c.selected, this.$menu);
 				$selected
+					.parents( 'li' )
+					.removeClass( _c.selected )
+					.end()
 					.add( $selected.parents( 'li' ) )
-					.parents( 'li' ).removeClass( _c.selected )
-					.end().each(
+					.each(
 						function()
 						{
 							var $t = $(this),
@@ -532,15 +533,21 @@
 							}
 						}
 					)
-					.closest( '.' + _c.panel ).addClass( _c.opened )
-					.parents( '.' + _c.panel ).addClass( _c.subopened );
+					.closest( '.' + _c.panel )
+					.addClass( _c.opened )
+					.parents( '.' + _c.panel )
+					.addClass( _c.subopened );
 			}
 			else
 			{
 				//	Replace Selected-class with opened-class in parents from .Selected
-				$('li.' + _c.selected, this.$menu)
-					.addClass( _c.opened )
-					.parents( '.' + _c.selected ).removeClass( _c.selected );
+				var $selected = $('li.' + _c.selected, this.$menu);
+				$selected
+					.parents( 'li' )
+					.removeClass( _c.selected )
+					.end()
+					.add( $selected.parents( 'li' ) )
+					.addClass( _c.opened );
 			}
 
 			//	Set current opened
@@ -632,7 +639,6 @@
 			if ( id && id.length )
 			{
 				$('a[href="#' + id + '"]')
-					.off( _e.click )
 					.on( _e.click,
 						function( e )
 						{
@@ -705,7 +711,6 @@
 		}
 	};
 	$[ _PLUGIN_ ].configuration = {
-		preventTabbing		: true,
 		panelClass			: 'Panel',
 		listClass			: 'List',
 		selectedClass		: 'Selected',
@@ -713,6 +718,9 @@
 		spacerClass			: 'Spacer',
 		pageNodetype		: 'div',
 		panelNodetype		: 'ul, ol, div',
+		pageSelector		: null,
+		menuWrapperSelector	: 'body',
+		menuInjectMethod	: 'prepend',
 		transitionDuration	: 400
 	};
 
@@ -815,6 +823,12 @@
 		if ( typeof c.pageSelector != 'string' )
 		{
 			c.pageSelector = '> ' + c.pageNodetype;
+		}
+
+		//	Restrict injectMethod
+		if ( c.menuInjectMethod != 'append' )
+		{
+			c.menuInjectMethod = 'prepend';
 		}
 
 		return c;
