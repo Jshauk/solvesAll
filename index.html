@@ -1,31 +1,12 @@
 <!DOCTYPE html>
 <head>
     <link rel="stylesheet" type="text/css" href="css/style.css">
-    <link type="text/css" rel="stylesheet" media="all" href="bower_components/mmenu/src/css/jquery.mmenu.all.css" />
+    <link type="text/css" rel="stylesheet" media="all" href="bower_components/mmenu/src/css/jquery.mmenu.css" />
+    <script src="js/jquery.js"></script>
     <script src="js/math.js"></script>
     <script src="js/menu.js"></script>
-    <script src="js/jquery.js"></script>
     <script src="bower_components/mmenu/src/js/jquery.mmenu.js"></script>
-    <style type="text/css">
-        @media all and (min-width: 900px) {
-            html, body {
-                height: 100%;
-            }
-            #menu {
-                background: #eee;
-            }
-            #page {
-                border-left: 1px solid #ccc;
-                min-height: 100%;
-            }
-            /* hide open-button */
-            a[href="#menu"]
-            {
-                display: none !important;
-            }
-        }
-    </style>
-<script>
+    <script>
 
     $(document).ready(function(){
         $('.title').click(function(){
@@ -47,16 +28,18 @@
 <body>
 <div id="wrapper">
 
-    <div id="content">
 
-        <div id="header">
-            <a id="simple-menu" href="#my-menu">
+
+    <div id="header">
+
+        <a id="simple-menu" href="#my-menu">
             <img id="menutoggle" src="img/menu.svg">
-            </a>
-            <div id="headerTitle">SolvesAll</div>
-        </div>
+        </a>
+        <div id="headerTitle">SolvesAll</div>
 
+    </div>
 
+    <div id="content">
 
         <!--Solve:Quadratic Formula-->
         <h3 id="qF" class='title algebra'> Quadratic Formula </h3>
