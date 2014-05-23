@@ -12,14 +12,34 @@ module.exports = function (math) {
       isCollection = collection.isCollection;
 
   /**
-   * Calculate the exponent of a value
-   *
-   *     exp(x)
-   *
+   * Calculate the exponent of a value.
    * For matrices, the function is evaluated element wise.
    *
-   * @param {Number | BigNumber | Boolean | Complex | Array | Matrix} x
-   * @return {Number | BigNumber | Complex | Array | Matrix} res
+   * Syntax:
+   *
+   *    math.exp(x)
+   *
+   * Examples:
+   *
+   *    var math = mathjs();
+   *
+   *    math.exp(2);                  // returns Number 7.3890560989306495
+   *    math.pow(math.e, 2);          // returns Number 7.3890560989306495
+   *    math.log(math.exp(2));        // returns Number 2
+   *
+   *    math.exp([1, 2, 3]);
+   *    // returns Array [
+   *    //   2.718281828459045,
+   *    //   7.3890560989306495,
+   *    //   20.085536923187668
+   *    // ]
+   *
+   * See also:
+   *
+   *    log, pow
+   *
+   * @param {Number | BigNumber | Boolean | Complex | Array | Matrix} x  A number or matrix to exponentiate
+   * @return {Number | BigNumber | Complex | Array | Matrix} Exponent of `x`
    */
   math.exp = function exp (x) {
     if (arguments.length != 1) {

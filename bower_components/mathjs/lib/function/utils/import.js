@@ -11,21 +11,50 @@ module.exports = function (math) {
 
   /**
    * Import functions from an object or a module
-   * @param {String | Object} object
-   * @param {Object} [options]        Available options:
-   *                                  {Boolean} override
-   *                                      If true, existing functions will be
-   *                                      overwritten. False by default.
-   *                                  {Boolean} wrap
-   *                                      If true (default), the functions will
-   *                                      be wrapped in a wrapper function which
-   *                                      converts data types like Matrix to
-   *                                      primitive data types like Array.
-   *                                      The wrapper is needed when extending
-   *                                      math.js with libraries which do not
-   *                                      support the math.js data types.
+   *
+   * Syntax:
+   *
+   *    math.import(object)
+   *    math.import(object, options)
+   *
+   * Where:
+   *
+   * - `object: Object`
+   *   An object with functions to be imported.
+   * - `options: Object` An object with import options. Available options:
+   *   - `override: boolean`
+   *     If true, existing functions will be overwritten. False by default.
+   *   - `wrap: boolean`
+   *     If true (default), the functions will be wrapped in a wrapper function
+   *     which converts data types like Matrix to primitive data types like Array.
+   *     The wrapper is needed when extending math.js with libraries which do not
+   *
+   * Examples:
+   *
+   *    var math = mathjs();
+   *
+   *    // define new functions and variables
+   *    math.import({
+   *      myvalue: 42,
+   *      hello: function (name) {
+   *        return 'hello, ' + name + '!';
+   *      }
+   *    });
+   *
+   *    // use the imported function and variable
+   *    math.myvalue * 2;               // 84
+   *    math.hello('user');             // 'hello, user!'
+   *
+   *    // import the npm module numbers
+   *    // (must be installed first with `npm install numbers`)
+   *    math.import('numbers');
+   *
+   *    math.fibonacci(7); // returns 13
+   *
+   * @param {String | Object} object  Object with functions to be imported.
+   * @param {Object} [options]        Import options.
    */
-// TODO: return status information
+  // TODO: return status information
   math['import'] = function math_import(object, options) {
     var num = arguments.length;
     if (num != 1 && num != 2) {

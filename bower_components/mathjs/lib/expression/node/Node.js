@@ -1,4 +1,4 @@
-var error = require('../../error');
+var error = require('../../error/index');
 
     /**
  * Node
@@ -135,6 +135,14 @@ Node.prototype.match = function (filter) {
  * @return {String}
  */
 Node.prototype.toString = function() {
+  return '';
+};
+
+/**
+ * Get LaTeX representation
+ * @return {String}
+ */
+Node.prototype.toTex = function() {
   return '';
 };
 

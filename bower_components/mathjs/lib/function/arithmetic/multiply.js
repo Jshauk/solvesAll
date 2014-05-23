@@ -15,14 +15,37 @@ module.exports = function(math) {
       isUnit = Unit.isUnit;
 
   /**
-   * Multiply two values.
+   * Multiply two values, `x * y`. The result is squeezed.
+   * For matrices, the matrix product is calculated.
    *
-   *     x * y
-   *     multiply(x, y)
+   * Syntax:
    *
-   * @param  {Number | BigNumber | Boolean | Complex | Unit | Array | Matrix} x
-   * @param  {Number | BigNumber | Boolean | Complex | Unit | Array | Matrix} y
-   * @return {Number | BigNumber | Complex | Unit | Array | Matrix} res
+   *    math.multiply(x, y)
+   *
+   * Examples:
+   *
+   *    var math = mathjs();
+   *
+   *    math.multiply(4, 5.2);        // returns Number 20.8
+   *
+   *    var a = math.complex(2, 3);
+   *    var b = math.complex(4, 1);
+   *    math.multiply(a, b);          // returns Complex 5 + 14i
+   *
+   *    var c = [[1, 2], [4, 3]];
+   *    var d = [[1, 2, 3], [3, -4, 7]];
+   *    math.multiply(c, d);          // returns Array [[7, -6, 17], [13, -4, 33]]
+   *
+   *    var e = math.unit('2.1 km');
+   *    math.multiply(3, e);          // returns Unit 6.3 km
+   *
+   * See also:
+   *
+   *    divide
+   *
+   * @param  {Number | BigNumber | Boolean | Complex | Unit | Array | Matrix} x First value to multiply
+   * @param  {Number | BigNumber | Boolean | Complex | Unit | Array | Matrix} y Second value to multiply
+   * @return {Number | BigNumber | Complex | Unit | Array | Matrix} Multiplication of `x` and `y`
    */
   math.multiply = function multiply(x, y) {
     var res;
@@ -42,6 +65,7 @@ module.exports = function(math) {
       }
       else if (isUnit(y)) {
         res = y.clone();
+        if (res.value === null) res.value = res._normalize(1);
         res.value *= x;
         return res;
       }
@@ -94,6 +118,7 @@ module.exports = function(math) {
     if (isUnit(x)) {
       if (isNumber(y)) {
         res = x.clone();
+        if (res.value === null) res.value = res._normalize(1);
         res.value *= y;
         return res;
       }
@@ -172,7 +197,8 @@ module.exports = function(math) {
       }
       else if (y instanceof Matrix) {
         // array * matrix
-        return new Matrix(multiply(x, y.valueOf()));
+        res = multiply(x, y.valueOf());
+        return isArray(res) ? new Matrix(res) : res;
       }
       else {
         // array * scalar
@@ -183,12 +209,14 @@ module.exports = function(math) {
     if (x instanceof Matrix) {
       if (y instanceof Matrix) {
         // matrix * matrix
-        return new Matrix(multiply(x.valueOf(), y.valueOf()));
+        res = multiply(x.valueOf(), y.valueOf());
+        return isArray(res) ? new Matrix(res) : res;
       }
       else {
         // matrix * array
         // matrix * scalar
-        return new Matrix(multiply(x.valueOf(), y));
+        res = multiply(x.valueOf(), y);
+        return isArray(res) ? new Matrix(res) : res;
       }
     }
 
@@ -216,7 +244,7 @@ module.exports = function(math) {
    * The size of the matrices is not validated.
    * @param {Array} x   A 2d matrix
    * @param {Array} y   A 2d matrix
-   * @return {Array} result
+   * @return {Array | Number} result
    * @private
    */
   function _multiplyMatrixMatrix(x, y) {
@@ -238,7 +266,7 @@ module.exports = function(math) {
       }
     }
 
-    return res;
+    return array.squeeze(res);
   }
 
   /**
@@ -246,7 +274,7 @@ module.exports = function(math) {
    * The size of the matrices is not validated.
    * @param {Array} x   A vector
    * @param {Array} y   A 2d matrix
-   * @return {Array} result
+   * @return {Array | Number} result
    * @private
    */
   function _multiplyVectorMatrix(x, y) {
@@ -264,7 +292,7 @@ module.exports = function(math) {
       res[c] = result;
     }
 
-    return res;
+    return array.squeeze(res);
   }
 
   /**
@@ -272,7 +300,7 @@ module.exports = function(math) {
    * The size of the matrices is not validated.
    * @param {Array} x   A 2d matrix
    * @param {Array} y   A vector
-   * @return {Array} result
+   * @return {Array | Number} result
    * @private
    */
   function _multiplyMatrixVector(x, y) {
@@ -290,7 +318,7 @@ module.exports = function(math) {
       res[r] = result;
     }
 
-    return res;
+    return array.squeeze(res);
   }
 
   /**

@@ -155,6 +155,21 @@ scope.a = 3;
 code2.eval(scope); // 27
 ```
 
+Parsed expressions can be exported to text using `node.toString()`, and can
+be exported to LaTeX using `node.toTex()`. The LaTeX export can be used to 
+pretty print an expression in the browser with a library like 
+[MathJax](http://www.mathjax.org/). Example usage:
+
+```js
+// create an instance of math.js
+var math = require('mathjs')();
+
+// parse an expression
+var node = math.parse('sqrt(x/x+1)');
+node.toString();  // returns 'ans = sqrt((x / x) + 1)'
+node.toTex();     // returns '{ans}={\sqrt{{\frac{x}{x}}+{1}}}'
+```
+
 
 ### Parser
 
@@ -174,17 +189,10 @@ The parser contains the following functions:
 
 - `clear()`
   Completely clear the parser's scope.
-- `compile(expr)`
-  Parse and compile an expression into javascript code.
-  Returns an Object with function `eval([scope])`, which when executed
-  returns the result of the expression.
 - `eval(expr)`
   Evaluate an expression. Returns the result of the expression.
 - `get(name)`
   Retrieve a variable or function from the parser's scope.
-- `parse(expr)`
-  Parse an expression into a node tree. Returns a `Node`, which can be
-  compiled and evaluated like `node.compile(math).eval([scope])`.
 - `remove(name)`
   Remove a variable or function from the parser's scope.
 - `set(name, value)`

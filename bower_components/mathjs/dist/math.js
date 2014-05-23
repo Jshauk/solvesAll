@@ -6,8 +6,8 @@
  * It features real and complex numbers, units, matrices, a large set of
  * mathematical functions, and a flexible expression parser.
  *
- * @version 0.21.0
- * @date    2014-04-24
+ * @version 0.22.0
+ * @date    2014-05-22
  *
  * @license
  * Copyright (C) 2013-2014 Jos de Jong <wjosdejong@gmail.com>
@@ -27,14 +27,14 @@
 
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
-		module.exports = factory();
+		module.exports = factory(require("crypto"));
 	else if(typeof define === 'function' && define.amd)
-		define(factory);
+		define(["crypto"], factory);
 	else if(typeof exports === 'object')
-		exports["mathjs"] = factory();
+		exports["mathjs"] = factory(require("crypto"));
 	else
-		root["mathjs"] = factory();
-})(this, function() {
+		root["mathjs"] = factory(root["crypto"]);
+})(this, function(__WEBPACK_EXTERNAL_MODULE_256__) {
 return /******/ (function(modules) { // webpackBootstrap
 /******/ 	
 /******/ 	// The module cache
@@ -188,7 +188,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  };
 
 	  // create a new BigNumber factory for this instance of math.js
-	  var BigNumber = __webpack_require__(122).constructor();
+	  var BigNumber = __webpack_require__(118).constructor();
 
 	  // extend BigNumber with a function clone
 	  if (typeof BigNumber.prototype.clone !== 'function') {
@@ -242,9 +242,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	  math.expression = {};
 	  math.expression.node = __webpack_require__(14);
 	  math.expression.parse = __webpack_require__(12);
-	  math.expression.Scope = function () {
-	    throw new Error('Scope is deprecated. Use a regular Object instead');
-	  };
 	  math.expression.Parser = __webpack_require__(13);
 	  math.expression.docs = __webpack_require__(15);
 
@@ -571,10 +568,10 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 4 */
 /***/ function(module, exports, __webpack_require__) {
 
-	exports.ArgumentsError = __webpack_require__(118);
-	exports.DimensionError = __webpack_require__(119);
-	exports.IndexError = __webpack_require__(120);
-	exports.UnsupportedTypeError = __webpack_require__(121);
+	exports.ArgumentsError = __webpack_require__(119);
+	exports.DimensionError = __webpack_require__(120);
+	exports.IndexError = __webpack_require__(121);
+	exports.UnsupportedTypeError = __webpack_require__(122);
 
 	// TODO: implement an InvalidValueError?
 
@@ -1563,7 +1560,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /***/ function(module, exports, __webpack_require__) {
 
 	var util = __webpack_require__(123),
-	    DimensionError = __webpack_require__(119),
+	    DimensionError = __webpack_require__(120),
 
 	    Index = __webpack_require__(7),
 
@@ -3046,7 +3043,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var util = __webpack_require__(123),
 
-	    DimensionError = __webpack_require__(119),
+	    DimensionError = __webpack_require__(120),
 
 	    Matrix = __webpack_require__(8),
 
@@ -3299,6 +3296,8 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var util = __webpack_require__(123),
 
+	    ArgumentsError = __webpack_require__(119),
+
 	    isString = util.string.isString,
 	    isArray = Array.isArray,
 	    type = util.types.type,
@@ -3357,7 +3356,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	 */
 	function parse (expr, nodes) {
 	  if (arguments.length != 1 && arguments.length != 2) {
-	    throw new SyntaxError('Wrong number of arguments: 1 or 2 expected');
+	    throw new ArgumentsError('parse', arguments.length, 1, 2);
 	  }
 
 	  // pass extra nodes
@@ -3761,7 +3760,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	function parseFunctionAssignment () {
 	  // TODO: function assignment using keyword 'function' is deprecated since version 0.18.0, cleanup some day
 	  if (token_type == TOKENTYPE.SYMBOL && token == 'function') {
-	    throw new Error('Deprecated keyword "function". ' +
+	    throw createSyntaxError('Deprecated keyword "function". ' +
 	        'Functions can now be assigned without it, like "f(x) = x^2".');
 	  }
 
@@ -4051,7 +4050,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 	/**
-	 * parse units like in '2i', '2 cm'
+	 * parse units conversion 'in' like '5cm in inch'
 	 * @return {Node} node
 	 * @private
 	 */
@@ -4108,7 +4107,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    fn = (name == '^') ? 'pow' : 'epow';
 
 	    getToken();
-	    params = [node, parsePow()];
+	    params = [node, parseUnary()]; // Go back to unary, we can have '2^-3'
 	    node = new OperatorNode(name, fn, params);
 	  }
 
@@ -4138,6 +4137,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	    params = [node];
 
 	    node = new OperatorNode(name, fn, params);
+
+	    node = parseParams(node); // cases like "A'[2,3]"
 	  }
 
 	  return node;
@@ -4518,23 +4519,17 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 	/**
-	 * Build up an error message
-	 * @param {String} message
-	 * @return {String} message with char information
-	 * @private
-	 */
-	function createErrorMessage (message) {
-	  return message + ' (char ' + col() + ')';
-	}
-
-	/**
 	 * Create an error
 	 * @param {String} message
 	 * @return {SyntaxError} instantiated error
 	 * @private
 	 */
 	function createSyntaxError (message) {
-	  return new SyntaxError(createErrorMessage(message));
+	  var c = col();
+	  var error = new SyntaxError(message + ' (char ' + c + ')');
+	  error['char'] = c;
+
+	  return error;
 	}
 
 	/**
@@ -4544,7 +4539,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	 * @private
 	 */
 	function createError (message) {
-	  return new Error(createErrorMessage(message));
+	  var c = col();
+	  var error = new Error(message + ' (char ' + c + ')');
+	  error['char'] = c;
+
+	  return error;
 	}
 
 	module.exports = parse;
@@ -4570,17 +4569,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	 *    parser.remove(name);               // clear a variable from the
 	 *                                       // parsers scope
 	 *    parser.clear();                    // clear the parsers scope
-	 *
-	 *    // it is possible to parse an expression into a node tree:
-	 *    var node = parser.parse(expr);     // parse an expression into a node tree
-	 *    var code = node.compile(math);     // compile a node tree into javascript
-	 *                                       // code
-	 *    var code = parser.compile(expr);   // parse and compile an expression into
-	 *                                       // javascript code. Equivalent of
-	 *                                       // parser.parse(expr).compile(math)
-	 *
-	 *    // A compiled expression can be evaluated as
-	 *    var result = code.eval([scope]);   // scope is an optional object
 	 *
 	 * Example usage:
 	 *    var parser = new Parser(math);
@@ -4639,8 +4627,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	 * @throws {Error}
 	 */
 	Parser.prototype.parse = function (expr) {
-	  // TODO: validate arguments
-	  return _parse(expr);
+	  throw new Error('Parser.parse is deprecated. Use math.parse instead.');
 	};
 
 	/**
@@ -4651,8 +4638,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	 * @throws {Error}
 	 */
 	Parser.prototype.compile = function (expr) {
-	  // TODO: validate arguments
-	  return _parse(expr).compile(this.math);
+	  throw new Error('Parser.compile is deprecated. Use math.compile instead.');
 	};
 
 	/**
@@ -4997,7 +4983,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	   *     var code = math.compile(expr)
 	   *     var codes = math.compile([expr1, expr2, expr3, ...])
 	   *
-	   * Example:
+	   * Examples:
 	   *
 	   *     var code = math.compile('sqrt(3^2 + 4^2)');
 	   *     code.eval(); // 5
@@ -5011,8 +4997,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	   *     var nodes = math.compile(['a = 3', 'b = 4', 'a * b']);
 	   *     nodes[2].eval(); // 12
 	   *
+	   * See also:
+	   *
+	   *    parse, eval
+	   *
 	   * @param {String | String[] | Matrix} expr
-	   * @return {Object | Object[]} code
+	   *            The expression to be compiled
+	   * @return {{eval: Function} | Array.<{eval: Function}>} code
+	   *            An object with the compiled expression
 	   * @throws {Error}
 	   */
 	  math.compile = function compile (expr) {
@@ -5071,9 +5063,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	   *     var scope = {a:3, b:4};
 	   *     math.eval('a * b', scope);           // 12
 	   *
-	   * @param {String | String[] | Matrix} expr
-	   * @param {Object} [scope]
-	   * @return {*} res
+	   * See also:
+	   *
+	   *    parse, compile
+	   *
+	   * @param {String | String[] | Matrix} expr   The expression to be evaluated
+	   * @param {Object} [scope]                    Scope to read/write variables
+	   * @return {*} The result of the expression
 	   * @throws {Error}
 	   */
 	  math.eval = function _eval (expr, scope) {
@@ -5115,8 +5111,22 @@ return /******/ (function(modules) { // webpackBootstrap
 	  /**
 	   * Retrieve help on a function or data type.
 	   * Help files are retrieved from the documentation in math.expression.docs.
-	   * @param {function | string | Object} search
-	   * @return {Help} help
+	   *
+	   * Syntax:
+	   *
+	   *    math.help(search)
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    console.log(math.help('sin').toString());
+	   *    console.log(math.help(math.add).toString());
+	   *    console.log(math.help(math.add).toJSON());
+	   *
+	   * @param {function | string | Object} search   A function or function name
+	   *                                              for which to get help
+	   * @return {Help} A help object
 	   */
 	  math.help = function help(search) {
 	    if (arguments.length != 1) {
@@ -5182,6 +5192,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	   *
 	   * Example:
 	   *
+	   *     var math = mathjs();
+	   *
 	   *     var node = math.parse('sqrt(3^2 + 4^2)');
 	   *     node.compile(math).eval(); // 5
 	   *
@@ -5193,11 +5205,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	   *     code.eval(scope); // 20
 	   *
 	   *     var nodes = math.parse(['a = 3', 'b = 4', 'a * b']);
-	   *     nodes[2].compile(math).eval(); // 12
+	   *     var scope2 = {};
+	   *     nodes.map(function(node) {
+	   *       return node.compile(math).eval(scope2);
+	   *     });  // returns [3, 4, 12]
 	   *
-	   * @param {String | String[] | Matrix} expr
-	   * @param {Object<String, Node>} [nodes]
-	   * @return {Node | Node[]} node
+	   * @param {String | String[] | Matrix} expr   Expression to be parsed
+	   * @param {Object<String, Node>} [nodes]      Optional custom nodes
+	   * @return {Node | Node[]} A node tree
 	   * @throws {Error}
 	   */
 	  math.parse = function parse (expr, nodes) {
@@ -5225,14 +5240,30 @@ return /******/ (function(modules) { // webpackBootstrap
 	      isCollection = collection.isCollection;
 
 	  /**
-	   * Calculate the absolute value of a value.
+	   * Calculate the absolute value of a number. For matrices, the function is
+	   * evaluated element wise.
 	   *
-	   *     abs(x)
+	   * Syntax:
 	   *
-	   * For matrices, the function is evaluated element wise.
+	   *    math.abs(x)
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    math.abs(3.5);                // returns Number 3.5
+	   *    math.abs(-4.2);               // returns Number 4.2
+	   *
+	   *    math.abs([3, -5, -1, 0, 2]);  // returns Array [3, 5, 1, 0, 2]
+	   *
+	   * See also:
+	   *
+	   *    sign
 	   *
 	   * @param  {Number | BigNumber | Boolean | Complex | Array | Matrix} x
-	   * @return {Number | BigNumber | Complex | Array | Matrix} res
+	   *            A number or matrix for which to get the absolute value
+	   * @return {Number | BigNumber | Complex | Array | Matrix}
+	   *            Absolute value of `x`
 	   */
 	  math.abs = function abs(x) {
 	    if (arguments.length != 1) {
@@ -5285,16 +5316,36 @@ return /******/ (function(modules) { // webpackBootstrap
 	      isCollection = collection.isCollection;
 
 	  /**
-	   * Add two values
-	   *
-	   *     x + y
-	   *     add(x, y)
-	   *
+	   * Add two values, `x + y`.
 	   * For matrices, the function is evaluated element wise.
 	   *
-	   * @param  {Number | BigNumber | Boolean | Complex | Unit | String | Array | Matrix} x
-	   * @param  {Number | BigNumber | Boolean | Complex | Unit | String | Array | Matrix} y
-	   * @return {Number | BigNumber | Complex | Unit | String | Array | Matrix} res
+	   * Syntax:
+	   *
+	   *    math.add(x, y)
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    math.add(2, 3);               // returns Number 5
+	   *
+	   *    var a = math.complex(2, 3);
+	   *    var b = math.complex(-4, 1);
+	   *    math.add(a, b);               // returns Complex -2 + 4i
+	   *
+	   *    math.add([1, 2, 3], 4);       // returns Array [5, 6, 7]
+	   *
+	   *    var c = math.unit('5 cm');
+	   *    var d = math.unit('2.1 mm');
+	   *    math.add(c, d);               // returns Unit 52.1 mm
+	   *
+	   * See also:
+	   *
+	   *    subtract
+	   *
+	   * @param  {Number | BigNumber | Boolean | Complex | Unit | String | Array | Matrix} x First value to add
+	   * @param  {Number | BigNumber | Boolean | Complex | Unit | String | Array | Matrix} y Second value to add
+	   * @return {Number | BigNumber | Complex | Unit | String | Array | Matrix} Sum of `x` and `y`
 	   */
 	  math.add = function add(x, y) {
 	    if (arguments.length != 2) {
@@ -5386,12 +5437,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	      return add(x, y.toNumber());
 	    }
 
-	    if (isString(x) || isString(y)) {
-	      return x + y;
-	    }
-
 	    if (isCollection(x) || isCollection(y)) {
 	      return collection.deepMap2(x, y, add);
+	    }
+
+	    if (isString(x) || isString(y)) {
+	      return x + y;
 	    }
 
 	    if (isBoolean(x)) {
@@ -5424,13 +5475,33 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	  /**
 	   * Round a value towards plus infinity
-	   *
-	   *     ceil(x)
-	   *
+	   * If `x` is complex, both real and imaginary part are rounded towards plus infinity.
 	   * For matrices, the function is evaluated element wise.
 	   *
-	   * @param  {Number | BigNumber | Boolean | Complex | Array | Matrix} x
-	   * @return {Number | BigNumber | Complex | Array | Matrix} res
+	   * Syntax:
+	   *
+	   *    math.ceil(x)
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    math.ceil(3.2);               // returns Number 4
+	   *    math.ceil(3.8);               // returns Number 4
+	   *    math.ceil(-4.2);              // returns Number -4
+	   *    math.ceil(-4.7);              // returns Number -4
+	   *
+	   *    var c = math.complex(3.2, -2.7);
+	   *    math.ceil(c);                 // returns Complex 4 - 2i
+	   *
+	   *    math.ceil([3.2, 3.8, -4.7]);  // returns Array [4, 4, -4]
+	   *
+	   * See also:
+	   *
+	   *    floor, fix, round
+	   *
+	   * @param  {Number | BigNumber | Boolean | Complex | Array | Matrix} x  Number to be rounded
+	   * @return {Number | BigNumber | Complex | Array | Matrix} Rounded value
 	   */
 	  math.ceil = function ceil(x) {
 	    if (arguments.length != 1) {
@@ -5486,18 +5557,39 @@ return /******/ (function(modules) { // webpackBootstrap
 	      isCollection = collection.isCollection;
 
 	  /**
-	   * Compare two values. Returns 1 when x > y, -1 when x < y, and 0 when x == y
-	   * For matrices, the function is evaluated element wise.
-	   *
-	   *    compare(x, y)
+	   * Compare two values. Returns 1 when x > y, -1 when x < y, and 0 when x == y.
 	   *
 	   * x and y are considered equal when the relative difference between x and y
 	   * is smaller than the configured epsilon. The function cannot be used to
 	   * compare values smaller than approximately 2.22e-16.
 	   *
-	   * @param  {Number | BigNumber | Boolean | Unit | String | Array | Matrix} x
-	   * @param  {Number | BigNumber | Boolean | Unit | String | Array | Matrix} y
-	   * @return {Number | BigNumber | Array | Matrix} res
+	   * For matrices, the function is evaluated element wise.
+	   *
+	   * Syntax:
+	   *
+	   *    math.compare(x, y)
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    math.compare(6, 1);           // returns 1
+	   *    math.compare(2, 3);           // returns -1
+	   *    math.compare(7, 7);           // returns 0
+	   *
+	   *    var a = math.unit('5 cm');
+	   *    var b = math.unit('40 mm');
+	   *    math.compare(a, b);           // returns 1
+	   *
+	   *    math.compare(2, [1, 2, 3]);   // returns [1, 0, -1]
+	   *
+	   * See also:
+	   *
+	   *    equal, unequal, smaller, smallereq, larger, largereq
+	   *
+	   * @param  {Number | BigNumber | Boolean | Unit | String | Array | Matrix} x First value to compare
+	   * @param  {Number | BigNumber | Boolean | Unit | String | Array | Matrix} y Second value to compare
+	   * @return {Number | BigNumber | Array | Matrix} Returns the result of the comparison: 1, 0 or -1.
 	   */
 	  math.compare = function compare(x, y) {
 	    if (arguments.length != 2) {
@@ -5591,15 +5683,30 @@ return /******/ (function(modules) { // webpackBootstrap
 	      isCollection = collection.isCollection;
 
 	  /**
-	   * Compute the cube of a value
-	   *
-	   *     x .* x .* x
-	   *     cube(x)
-	   *
+	   * Compute the cube of a value, `x * x * x`.
 	   * For matrices, the function is evaluated element wise.
 	   *
-	   * @param  {Number | BigNumber | Boolean | Complex | Array | Matrix} x
-	   * @return {Number | BigNumber | Complex | Array | Matrix} res
+	   * Syntax:
+	   *
+	   *    math.cube(x)
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    math.cube(2);            // returns Number 8
+	   *    math.pow(2, 3);          // returns Number 8
+	   *    math.cube(4);            // returns Number 64
+	   *    4 * 4 * 4;               // returns Number 64
+	   *
+	   *    math.cube([1, 2, 3, 4]); // returns Array [1, 8, 27, 64]
+	   *
+	   * See also:
+	   *
+	   *    multiply, square, pow
+	   *
+	   * @param  {Number | BigNumber | Boolean | Complex | Array | Matrix} x  Number for which to calculate the cube
+	   * @return {Number | BigNumber | Complex | Array | Matrix} Cube of x
 	   */
 	  math.cube = function cube(x) {
 	    if (arguments.length != 1) {
@@ -5651,14 +5758,37 @@ return /******/ (function(modules) { // webpackBootstrap
 	      isCollection = collection.isCollection;
 
 	  /**
-	   * Divide two values.
+	   * Divide two values, `x / y`.
+	   * To divide matrices, `x` is multiplied with the inverse of `y`: `x * inv(y)`.
 	   *
-	   *     x / y
-	   *     divide(x, y)
+	   * Syntax:
 	   *
-	   * @param  {Number | BigNumber | Boolean | Complex | Unit | Array | Matrix} x
-	   * @param  {Number | BigNumber | Boolean | Complex} y
-	   * @return {Number | BigNumber | Complex | Unit | Array | Matrix} res
+	   *    math.divide(x, y)
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    math.divide(2, 3);            // returns Number 0.6666666666666666
+	   *
+	   *    var a = math.complex(5, 14);
+	   *    var b = math.complex(4, 1);
+	   *    math.divide(a, b);            // returns Complex 2 + 3i
+	   *
+	   *    var c = [[7, -6], [13, -4]];
+	   *    var d = [[1, 2], [4, 3]];
+	   *    math.divide(c, d);            // returns Array [[-9, 4], [-11, 6]]
+	   *
+	   *    var e = math.unit('18 km');
+	   *    math.divide(e, 4.5);          // returns Unit 4 km
+	   *
+	   * See also:
+	   *
+	   *    multiply
+	   *
+	   * @param  {Number | BigNumber | Boolean | Complex | Unit | Array | Matrix} x   Numerator
+	   * @param  {Number | BigNumber | Boolean | Complex | Array | Matrix} y          Denominator
+	   * @return {Number | BigNumber | Complex | Unit | Array | Matrix}               Quotient, `x / y`
 	   */
 	  math.divide = function divide(x, y) {
 	    if (arguments.length != 2) {
@@ -5791,14 +5921,32 @@ return /******/ (function(modules) { // webpackBootstrap
 	  var collection = __webpack_require__(11);
 
 	  /**
-	   * Divide two values element wise.
+	   * Divide two matrices element wise. The function accepts both matrices and
+	   * scalar values.
 	   *
-	   *     x ./ y
-	   *     edivide(x, y)
+	   * Syntax:
 	   *
-	   * @param  {Number | BigNumber | Boolean | Complex | Unit | Array | Matrix} x
-	   * @param  {Number | BigNumber | Boolean | Complex | Unit | Array | Matrix} y
-	   * @return {Number | BigNumber | Complex | Unit | Array | Matrix} res
+	   *    math.edivide(x, y)
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    math.edivide(2, 4);   // returns 0.5
+	   *
+	   *    a = [[9, 5], [6, 1]];
+	   *    b = [[3, 2], [5, 2]];
+	   *
+	   *    math.edivide(a, b);   // returns [[3, 2.5], [1.2, 0.5]]
+	   *    math.divide(a, b);    // returns [[1.75, 0.75], [-1.75, 2.25]]
+	   *
+	   * See also:
+	   *
+	   *    divide, multiply, emultiply
+	   *
+	   * @param  {Number | BigNumber | Boolean | Complex | Unit | Array | Matrix} x Numerator
+	   * @param  {Number | BigNumber | Boolean | Complex | Unit | Array | Matrix} y Denominator
+	   * @return {Number | BigNumber | Complex | Unit | Array | Matrix}             Quotient, `x ./ y`
 	   */
 	  math.edivide = function edivide(x, y) {
 	    if (arguments.length != 2) {
@@ -5819,14 +5967,32 @@ return /******/ (function(modules) { // webpackBootstrap
 	      collection = __webpack_require__(11);
 
 	  /**
-	   * Multiply two values element wise.
+	   * Multiply two matrices element wise. The function accepts both matrices and
+	   * scalar values.
 	   *
-	   *     x .* y
-	   *     emultiply(x, y)
+	   * Syntax:
 	   *
-	   * @param  {Number | BigNumber | Boolean | Complex | Unit | Array | Matrix} x
-	   * @param  {Number | BigNumber | Boolean | Complex | Unit | Array | Matrix} y
-	   * @return {Number | BigNumber | Complex | Unit | Array | Matrix} res
+	   *    math.emultiply(x, y)
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    math.emultiply(2, 4); // returns 8
+	   *
+	   *    a = [[9, 5], [6, 1]];
+	   *    b = [[3, 2], [5, 2]];
+	   *
+	   *    math.emultiply(a, b); // returns [[27, 10], [30, 2]]
+	   *    math.multiply(a, b);  // returns [[52, 28], [23, 14]]
+	   *
+	   * See also:
+	   *
+	   *    multiply, divide, edivide
+	   *
+	   * @param  {Number | BigNumber | Boolean | Complex | Unit | Array | Matrix} x Left hand value
+	   * @param  {Number | BigNumber | Boolean | Complex | Unit | Array | Matrix} y Right hand value
+	   * @return {Number | BigNumber | Complex | Unit | Array | Matrix}             Multiplication of `x` and `y`
 	   */
 	  math.emultiply = function emultiply(x, y) {
 	    if (arguments.length != 2) {
@@ -5847,14 +6013,29 @@ return /******/ (function(modules) { // webpackBootstrap
 	      collection = __webpack_require__(11);
 
 	  /**
-	   * Calculates the power of x to y element wise
+	   * Calculates the power of x to y element wise.
 	   *
-	   *     x .^ y
-	   *     epow(x, y)
+	   * Syntax:
 	   *
-	   * @param  {Number | BigNumber | Boolean | Complex | Unit | Array | Matrix} x
-	   * @param  {Number | BigNumber | Boolean | Complex | Unit | Array | Matrix} y
-	   * @return {Number | BigNumber | Complex | Unit | Array | Matrix} res
+	   *    math.epow(x, y)
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    math.epow(2, 3);              // returns Number 8
+	   *
+	   *    var a = [[1, 2], [4, 3]];
+	   *    math.epow(a, 2);              // returns Array [[1, 4], [16, 9]]
+	   *    math.pow(a, 2);               // returns Array [[9, 8], [16, 17]]
+	   *
+	   * See also:
+	   *
+	   *    pow, sqrt, multiply
+	   *
+	   * @param  {Number | BigNumber | Boolean | Complex | Unit | Array | Matrix} x  The base
+	   * @param  {Number | BigNumber | Boolean | Complex | Unit | Array | Matrix} y  The exponent
+	   * @return {Number | BigNumber | Complex | Unit | Array | Matrix}              The value of `x` to the power `y`
 	   */
 	  math.epow = function epow(x, y) {
 	    if (arguments.length != 2) {
@@ -5887,21 +6068,37 @@ return /******/ (function(modules) { // webpackBootstrap
 	      isCollection = collection.isCollection;
 
 	  /**
-	   * Check if value x equals y,
+	   * Test whether two values are equal.
 	   *
-	   *     x == y
-	   *     equal(x, y)
+	   * The function tests whether the relative difference between x and y is
+	   * smaller than the configured epsilon. The function cannot be used to
+	   * compare values smaller than approximately 2.22e-16.
 	   *
 	   * For matrices, the function is evaluated element wise.
 	   * In case of complex numbers, x.re must equal y.re, and x.im must equal y.im.
 	   *
-	   * The function checks whether the relative difference between x and y is
-	   * smaller than the configured epsilon. The function cannot be used to
-	   * compare values smaller than approximately 2.22e-16.
+	   * Syntax:
 	   *
-	   * @param  {Number | BigNumber | Boolean | Complex | Unit | String | Array | Matrix} x
-	   * @param  {Number | BigNumber | Boolean | Complex | Unit | String | Array | Matrix} y
-	   * @return {Boolean | Array | Matrix} res
+	   *    math.equal(x, y)
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    math.equal(2 + 2, 3);         // returns false
+	   *    math.equal(2 + 2, 4);         // returns true
+	   *
+	   *    var a = math.unit('50 cm');
+	   *    var b = math.unit('5 m');
+	   *    math.equal(a, b);             // returns true
+	   *
+	   * See also:
+	   *
+	   *    unequal, smaller, smallereq, larger, largereq, compare
+	   *
+	   * @param  {Number | BigNumber | Boolean | Complex | Unit | String | Array | Matrix} x First value to compare
+	   * @param  {Number | BigNumber | Boolean | Complex | Unit | String | Array | Matrix} y Second value to compare
+	   * @return {Boolean | Array | Matrix} Returns true when the compared values are equal, else returns false
 	   */
 	  math.equal = function equal(x, y) {
 	    if (arguments.length != 2) {
@@ -6006,14 +6203,34 @@ return /******/ (function(modules) { // webpackBootstrap
 	      isCollection = collection.isCollection;
 
 	  /**
-	   * Calculate the exponent of a value
-	   *
-	   *     exp(x)
-	   *
+	   * Calculate the exponent of a value.
 	   * For matrices, the function is evaluated element wise.
 	   *
-	   * @param {Number | BigNumber | Boolean | Complex | Array | Matrix} x
-	   * @return {Number | BigNumber | Complex | Array | Matrix} res
+	   * Syntax:
+	   *
+	   *    math.exp(x)
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    math.exp(2);                  // returns Number 7.3890560989306495
+	   *    math.pow(math.e, 2);          // returns Number 7.3890560989306495
+	   *    math.log(math.exp(2));        // returns Number 2
+	   *
+	   *    math.exp([1, 2, 3]);
+	   *    // returns Array [
+	   *    //   2.718281828459045,
+	   *    //   7.3890560989306495,
+	   *    //   20.085536923187668
+	   *    // ]
+	   *
+	   * See also:
+	   *
+	   *    log, pow
+	   *
+	   * @param {Number | BigNumber | Boolean | Complex | Array | Matrix} x  A number or matrix to exponentiate
+	   * @return {Number | BigNumber | Complex | Array | Matrix} Exponent of `x`
 	   */
 	  math.exp = function exp (x) {
 	    if (arguments.length != 1) {
@@ -6066,14 +6283,33 @@ return /******/ (function(modules) { // webpackBootstrap
 	      isCollection = collection.isCollection;
 
 	  /**
-	   * Round a value towards zero
-	   *
-	   *     fix(x)
-	   *
+	   * Round a value towards zero.
 	   * For matrices, the function is evaluated element wise.
 	   *
-	   * @param {Number | Boolean | Complex | Array | Matrix} x
-	   * @return {Number | Complex | Array | Matrix} res
+	   * Syntax:
+	   *
+	   *    math.fix(x)
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    math.fix(3.2);                // returns Number 3
+	   *    math.fix(3.8);                // returns Number 3
+	   *    math.fix(-4.2);               // returns Number -4
+	   *    math.fix(-4.7);               // returns Number -4
+	   *
+	   *    var c = math.complex(3.2, -2.7);
+	   *    math.fix(c);                  // returns Complex 3 - 2i
+	   *
+	   *    math.fix([3.2, 3.8, -4.7]);   // returns Array [3, 3, -4]
+	   *
+	   * See also:
+	   *
+	   *    ceil, floor, round
+	   *
+	   * @param {Number | BigNumber | Boolean | Complex | Array | Matrix} x Number to be rounded
+	   * @return {Number | BigNumber | Complex | Array | Matrix}            Rounded value
 	   */
 	  math.fix = function fix(x) {
 	    if (arguments.length != 1) {
@@ -6125,14 +6361,33 @@ return /******/ (function(modules) { // webpackBootstrap
 	      isCollection = collection.isCollection;
 
 	  /**
-	   * Round a value towards minus infinity
-	   *
-	   *     floor(x)
-	   *
+	   * Round a value towards minus infinity.
 	   * For matrices, the function is evaluated element wise.
 	   *
-	   * @param  {Number | BigNumber | Boolean | Complex | Array | Matrix} x
-	   * @return {Number | BigNumber | Complex | Array | Matrix} res
+	   * Syntax:
+	   *
+	   *    math.floor(x)
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    math.floor(3.2);              // returns Number 3
+	   *    math.floor(3.8);              // returns Number 3
+	   *    math.floor(-4.2);             // returns Number -5
+	   *    math.floor(-4.7);             // returns Number -5
+	   *
+	   *    var c = math.complex(3.2, -2.7);
+	   *    math.floor(c);                // returns Complex 3 - 3i
+	   *
+	   *    math.floor([3.2, 3.8, -4.7]); // returns Array [3, 3, -5]
+	   *
+	   * See also:
+	   *
+	   *    ceil, fix, round
+	   *
+	   * @param  {Number | BigNumber | Boolean | Complex | Array | Matrix} x  Number to be rounded
+	   * @return {Number | BigNumber | Complex | Array | Matrix} Rounded value
 	   */
 	  math.floor = function floor(x) {
 	    if (arguments.length != 1) {
@@ -6185,13 +6440,29 @@ return /******/ (function(modules) { // webpackBootstrap
 	  /**
 	   * Calculate the greatest common divisor for two or more values or arrays.
 	   *
-	   *     gcd(a, b)
-	   *     gcd(a, b, c, ...)
-	   *
 	   * For matrices, the function is evaluated element wise.
 	   *
-	   * @param {... Number | Boolean | Array | Matrix} args    two or more integer numbers
-	   * @return {Number | Array | Matrix} greatest common divisor
+	   * Syntax:
+	   *
+	   *    math.gcd(a, b)
+	   *    math.gcd(a, b, c, ...)
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    math.gcd(8, 12);              // returns 4
+	   *    math.gcd(-4, 6);              // returns 2
+	   *    math.gcd(25, 15, -10);        // returns 5
+	   *
+	   *    math.gcd([8, -4], [12, 6]);   // returns [4, 2]
+	   *
+	   * See also:
+	   *
+	   *    lcm, xgcd
+	   *
+	   * @param {... Number | Boolean | Array | Matrix} args  Two or more integer numbers
+	   * @return {Number | Array | Matrix}                    The greatest common divisor
 	   */
 	  math.gcd = function gcd(args) {
 	    var a = arguments[0],
@@ -6274,20 +6545,36 @@ return /******/ (function(modules) { // webpackBootstrap
 	      isCollection = collection.isCollection;
 
 	  /**
-	   * Check if value x is larger y
-	   *
-	   *    x > y
-	   *    larger(x, y)
-	   *
-	   * For matrices, the function is evaluated element wise.
+	   * Test whether value x is larger than y.
 	   *
 	   * The function returns true when x is larger than y and the relative
 	   * difference between x and y is larger than the configured epsilon. The
 	   * function cannot be used to compare values smaller than approximately 2.22e-16.
 	   *
-	   * @param  {Number | BigNumber | Boolean | Unit | String | Array | Matrix} x
-	   * @param  {Number | BigNumber | Boolean | Unit | String | Array | Matrix} y
-	   * @return {Boolean | Array | Matrix} res
+	   * For matrices, the function is evaluated element wise.
+	   *
+	   * Syntax:
+	   *
+	   *    math.larger(x, y)
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    math.larger(2, 3);             // returns false
+	   *    math.larger(5, 2 + 2);         // returns true
+	   *
+	   *    var a = math.unit('5 cm');
+	   *    var b = math.unit('2 inch');
+	   *    math.larger(a, b);             // returns false
+	   *
+	   * See also:
+	   *
+	   *    equal, unequal, smaller, smallereq, largereq, compare
+	   *
+	   * @param  {Number | BigNumber | Boolean | Unit | String | Array | Matrix} x First value to compare
+	   * @param  {Number | BigNumber | Boolean | Unit | String | Array | Matrix} y Second value to compare
+	   * @return {Boolean | Array | Matrix} Returns true when the x is larger than y, else returns false
 	   */
 	  math.larger = function larger(x, y) {
 	    if (arguments.length != 2) {
@@ -6385,20 +6672,32 @@ return /******/ (function(modules) { // webpackBootstrap
 	      isCollection = collection.isCollection;
 
 	  /**
-	   * Check if value x is larger or equal to y
-	   *
-	   *     x >= y
-	   *     largereq(x, y)
-	   *
-	   * For matrices, the function is evaluated element wise.
+	   * Test whether value x is larger or equal to y.
 	   *
 	   * The function returns true when x is larger than y or the relative
 	   * difference between x and y is smaller than the configured epsilon. The
 	   * function cannot be used to compare values smaller than approximately 2.22e-16.
 	   *
-	   * @param  {Number | BigNumber | Boolean | Unit | String | Array | Matrix} x
-	   * @param  {Number | BigNumber | Boolean | Unit | String | Array | Matrix} y
-	   * @return {Boolean | Array | Matrix} res
+	   * For matrices, the function is evaluated element wise.
+	   *
+	   * Syntax:
+	   *
+	   *    math.largereq(x, y)
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    math.larger(2, 1 + 1);         // returns false
+	   *    math.largereq(2, 1 + 1);       // returns true
+	   *
+	   * See also:
+	   *
+	   *    equal, unequal, smaller, smallereq, larger, compare
+	   *
+	   * @param  {Number | BigNumber | Boolean | Unit | String | Array | Matrix} x First value to compare
+	   * @param  {Number | BigNumber | Boolean | Unit | String | Array | Matrix} y Second value to compare
+	   * @return {Boolean | Array | Matrix} Returns true when the x is larger or equal to y, else returns false
 	   */
 	  math.largereq = function largereq(x, y) {
 	    if (arguments.length != 2) {
@@ -6493,16 +6792,33 @@ return /******/ (function(modules) { // webpackBootstrap
 	  /**
 	   * Calculate the least common multiple for two or more values or arrays.
 	   *
-	   *     lcm(a, b)
-	   *     lcm(a, b, c, ...)
-	   *
 	   * lcm is defined as:
+	   *
 	   *     lcm(a, b) = abs(a * b) / gcd(a, b)
 	   *
 	   * For matrices, the function is evaluated element wise.
 	   *
-	   * @param {... Number | Boolean | Array | Matrix} args    two or more integer numbers
-	   * @return {Number | Array | Matrix} least common multiple
+	   * Syntax:
+	   *
+	   *    math.lcm(a, b)
+	   *    math.lcm(a, b, c, ...)
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    math.lcm(4, 6);               // returns 12
+	   *    math.lcm(6, 21);              // returns 42
+	   *    math.lcm(6, 21, 5);           // returns 210
+	   *
+	   *    math.lcm([4, 6], [6, 21]);    // returns [12, 42]
+	   *
+	   * See also:
+	   *
+	   *    gcd, xgcd
+	   *
+	   * @param {... Number | Boolean | Array | Matrix} args  Two or more integer numbers
+	   * @return {Number | Array | Matrix}                    The least common multiple
 	   */
 	  math.lcm = function lcm(args) {
 	    var a = arguments[0],
@@ -6587,17 +6903,40 @@ return /******/ (function(modules) { // webpackBootstrap
 	      isCollection = collection.isCollection;
 
 	  /**
-	   * Calculate the logarithm of a value
+	   * Calculate the logarithm of a value.
 	   *
-	   *     log(x)
-	   *     log(x, base)
-	   *
-	   * base is optional. If not provided, the natural logarithm of x is calculated.
 	   * For matrices, the function is evaluated element wise.
 	   *
+	   * Syntax:
+	   *
+	   *    math.log(x)
+	   *    math.log(x, base)
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    math.log(3.5);                  // returns 1.252762968495368
+	   *    math.exp(math.log(2.4));        // returns 2.4
+	   *
+	   *    math.pow(10, 4);                // returns 10000
+	   *    math.log(10000, 10);            // returns 4
+	   *    math.log(10000) / math.log(10); // returns 4
+	   *
+	   *    math.log(1024, 2);              // returns 10
+	   *    math.pow(2, 10);                // returns 1024
+	   *
+	   * See also:
+	   *
+	   *    exp, log10
+	   *
 	   * @param {Number | BigNumber | Boolean | Complex | Array | Matrix} x
-	   * @param {Number | BigNumber | Boolean | Complex} [base]
-	   * @return {Number | BigNumber | Complex | Array | Matrix} res
+	   *            Value for which to calculate the logarithm.
+	   * @param {Number | BigNumber | Boolean | Complex} [base=e]
+	   *            Optional base for the logarithm. If not provided, the natural
+	   *            logarithm of `x` is calculated.
+	   * @return {Number | BigNumber | Complex | Array | Matrix}
+	   *            Returns the logarithm of `x`
 	   */
 	  math.log = function log(x, base) {
 	    if (arguments.length == 1) {
@@ -6667,14 +7006,31 @@ return /******/ (function(modules) { // webpackBootstrap
 	      isCollection = collection.isCollection;
 
 	  /**
-	   * Calculate the 10-base logarithm of a value
-	   *
-	   *     log10(x)
+	   * Calculate the 10-base of a value. This is the same as calculating `log(x, 10)`.
 	   *
 	   * For matrices, the function is evaluated element wise.
 	   *
+	   * Syntax:
+	   *
+	   *    math.log10(x)
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    math.log10(0.00001);            // returns -5
+	   *    math.log10(10000);              // returns 4
+	   *    math.log(10000) / math.log(10); // returns 4
+	   *    math.pow(10, 4);                // returns 10000
+	   *
+	   * See also:
+	   *
+	   *    exp, log
+	   *
 	   * @param {Number | BigNumber | Boolean | Complex | Array | Matrix} x
-	   * @return {Number | BigNumber | Complex | Array | Matrix} res
+	   *            Value for which to calculate the logarithm.
+	   * @return {Number | BigNumber | Complex | Array | Matrix}
+	   *            Returns the 10-base logarithm of `x`
 	   */
 	  math.log10 = function log10(x) {
 	    if (arguments.length != 1) {
@@ -6738,14 +7094,39 @@ return /******/ (function(modules) { // webpackBootstrap
 	  /**
 	   * Calculates the modulus, the remainder of an integer division.
 	   *
-	   *     x % y
-	   *     mod(x, y)
-	   *
 	   * For matrices, the function is evaluated element wise.
 	   *
-	   * @param  {Number | BigNumber | Boolean | Array | Matrix} x
-	   * @param  {Number | BigNumber | Boolean | Array | Matrix} y
-	   * @return {Number | BigNumber | Array | Matrix} res
+	   * The modulus is defined as:
+	   *
+	   *     x - y * floor(x / y)
+	   *
+	   * See http://en.wikipedia.org/wiki/Modulo_operation.
+	   *
+	   * Syntax:
+	   *
+	   *    math.mod(x, y)
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    math.mod(8, 3);                // returns 2
+	   *    math.mod(11, 2);               // returns 1
+	   *
+	   *    function isOdd(x) {
+	   *      return math.mod(x, 2) != 0;
+	   *    }
+	   *
+	   *    isOdd(2);                      // returns false
+	   *    isOdd(3);                      // returns true
+	   *
+	   * See also:
+	   *
+	   *    divide
+	   *
+	   * @param  {Number | BigNumber | Boolean | Array | Matrix} x Dividend
+	   * @param  {Number | BigNumber | Boolean | Array | Matrix} y Divisor
+	   * @return {Number | BigNumber | Array | Matrix} Returns the remainder of `x` divided by `y`.
 	   */
 	  math.mod = function mod(x, y) {
 	    if (arguments.length != 2) {
@@ -6856,14 +7237,37 @@ return /******/ (function(modules) { // webpackBootstrap
 	      isUnit = Unit.isUnit;
 
 	  /**
-	   * Multiply two values.
+	   * Multiply two values, `x * y`. The result is squeezed.
+	   * For matrices, the matrix product is calculated.
 	   *
-	   *     x * y
-	   *     multiply(x, y)
+	   * Syntax:
 	   *
-	   * @param  {Number | BigNumber | Boolean | Complex | Unit | Array | Matrix} x
-	   * @param  {Number | BigNumber | Boolean | Complex | Unit | Array | Matrix} y
-	   * @return {Number | BigNumber | Complex | Unit | Array | Matrix} res
+	   *    math.multiply(x, y)
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    math.multiply(4, 5.2);        // returns Number 20.8
+	   *
+	   *    var a = math.complex(2, 3);
+	   *    var b = math.complex(4, 1);
+	   *    math.multiply(a, b);          // returns Complex 5 + 14i
+	   *
+	   *    var c = [[1, 2], [4, 3]];
+	   *    var d = [[1, 2, 3], [3, -4, 7]];
+	   *    math.multiply(c, d);          // returns Array [[7, -6, 17], [13, -4, 33]]
+	   *
+	   *    var e = math.unit('2.1 km');
+	   *    math.multiply(3, e);          // returns Unit 6.3 km
+	   *
+	   * See also:
+	   *
+	   *    divide
+	   *
+	   * @param  {Number | BigNumber | Boolean | Complex | Unit | Array | Matrix} x First value to multiply
+	   * @param  {Number | BigNumber | Boolean | Complex | Unit | Array | Matrix} y Second value to multiply
+	   * @return {Number | BigNumber | Complex | Unit | Array | Matrix} Multiplication of `x` and `y`
 	   */
 	  math.multiply = function multiply(x, y) {
 	    var res;
@@ -6883,6 +7287,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      }
 	      else if (isUnit(y)) {
 	        res = y.clone();
+	        if (res.value === null) res.value = res._normalize(1);
 	        res.value *= x;
 	        return res;
 	      }
@@ -6935,6 +7340,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    if (isUnit(x)) {
 	      if (isNumber(y)) {
 	        res = x.clone();
+	        if (res.value === null) res.value = res._normalize(1);
 	        res.value *= y;
 	        return res;
 	      }
@@ -7013,7 +7419,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	      }
 	      else if (y instanceof Matrix) {
 	        // array * matrix
-	        return new Matrix(multiply(x, y.valueOf()));
+	        res = multiply(x, y.valueOf());
+	        return isArray(res) ? new Matrix(res) : res;
 	      }
 	      else {
 	        // array * scalar
@@ -7024,12 +7431,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	    if (x instanceof Matrix) {
 	      if (y instanceof Matrix) {
 	        // matrix * matrix
-	        return new Matrix(multiply(x.valueOf(), y.valueOf()));
+	        res = multiply(x.valueOf(), y.valueOf());
+	        return isArray(res) ? new Matrix(res) : res;
 	      }
 	      else {
 	        // matrix * array
 	        // matrix * scalar
-	        return new Matrix(multiply(x.valueOf(), y));
+	        res = multiply(x.valueOf(), y);
+	        return isArray(res) ? new Matrix(res) : res;
 	      }
 	    }
 
@@ -7057,7 +7466,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	   * The size of the matrices is not validated.
 	   * @param {Array} x   A 2d matrix
 	   * @param {Array} y   A 2d matrix
-	   * @return {Array} result
+	   * @return {Array | Number} result
 	   * @private
 	   */
 	  function _multiplyMatrixMatrix(x, y) {
@@ -7079,7 +7488,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      }
 	    }
 
-	    return res;
+	    return array.squeeze(res);
 	  }
 
 	  /**
@@ -7087,7 +7496,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	   * The size of the matrices is not validated.
 	   * @param {Array} x   A vector
 	   * @param {Array} y   A 2d matrix
-	   * @return {Array} result
+	   * @return {Array | Number} result
 	   * @private
 	   */
 	  function _multiplyVectorMatrix(x, y) {
@@ -7105,7 +7514,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      res[c] = result;
 	    }
 
-	    return res;
+	    return array.squeeze(res);
 	  }
 
 	  /**
@@ -7113,7 +7522,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	   * The size of the matrices is not validated.
 	   * @param {Array} x   A 2d matrix
 	   * @param {Array} y   A vector
-	   * @return {Array} result
+	   * @return {Array | Number} result
 	   * @private
 	   */
 	  function _multiplyMatrixVector(x, y) {
@@ -7131,7 +7540,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      res[r] = result;
 	    }
 
-	    return res;
+	    return array.squeeze(res);
 	  }
 
 	  /**
@@ -7261,13 +7670,41 @@ return /******/ (function(modules) { // webpackBootstrap
 	  /**
 	   * Calculate the norm of a number, vector or matrix.
 	   *
-	   *     norm(x)
-	   *     norm(x, p)
+	   * The second parameter p is optional. If not provided, it defaults to 2.
 	   *
-	   * p is optional. If not provided, defaults to 2 (The Frobenius norm or 'fro')).
+	   * Syntax:
+	   *
+	   *    math.norm(x)
+	   *    math.norm(x, p)
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    math.abs(-3.5);                         // returns 3.5
+	   *    math.norm(-3.5);                        // returns 3.5
+	   *
+	   *    math.norm(math.complex(3, -4));         // returns 5
+	   *
+	   *    math.norm([1, 2, -3], Infinity);        // returns 3
+	   *    math.norm([1, 2, -3], -Infinity);       // returns 1
+	   *
+	   *    math.norm([3, 4], 2);                   // returns 5
+	   *
+	   *    math.norm([[1, 2], [3, 4]], 1)          // returns 6
+	   *    math.norm([[1, 2], [3, 4]], 'inf');     // returns 7
+	   *    math.norm([[1, 2], [3, 4]], 'fro');     // returns 5.477225575051661
+	   *
+	   * See also:
+	   *
+	   *    abs
 	   *
 	   * @param  {Number | BigNumber | Complex | Boolean | Array | Matrix} x
-	   * @param  {Number | Infinity | -Infinity, 'inf', '-inf', 'fro'} [p]
+	   *            Value for which to calculate the norm
+	   * @param  {Number | String} [p=2]
+	   *            Vector space.
+	   *            Supported numbers include Infinity and -Infinity.
+	   *            Supported strings are: 'inf', '-inf', and 'fro' (The Frobenius norm)
 	   * @return {Number} the p-norm
 	   */
 	  math.norm = function norm(x, p) {
@@ -7281,7 +7718,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 
 	    if (isComplex(x)) {
-	      // ignore p, complex numbers 
+	      // ignore p, complex numbers
 	      return Math.sqrt(x.re * x.re + x.im * x.im);
 	    }
 
@@ -7294,7 +7731,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      // norm(x) = abs(x)
 	      return Math.abs(x);
 	    }
-	    
+
 	    if (isArray(x)) {
 	      // size
 	      var sizeX = array.size(x);
@@ -7360,7 +7797,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	          // norm(x) = the largest row sum
 	          var n = 0;
 	          // loop rows
-	          for (var i = 0; i < x.length; i++) {            
+	          for (var i = 0; i < x.length; i++) {
 	            var rs = 0;
 	            var r = x[i];
 	            // loop columns
@@ -7419,14 +7856,33 @@ return /******/ (function(modules) { // webpackBootstrap
 	      isComplex = Complex.isComplex;
 
 	  /**
-	   * Calculates the power of x to y
+	   * Calculates the power of x to y, `x ^ y`.
+	   * Matrix exponentiation is supported for square matrices `x`, and positive
+	   * integer exponents `y`.
 	   *
-	   *     x ^ y
-	   *     pow(x, y)
+	   * Syntax:
 	   *
-	   * @param  {Number | BigNumber | Boolean | Complex | Array | Matrix} x
-	   * @param  {Number | BigNumber | Boolean | Complex} y
-	   * @return {Number | BigNumber | Complex | Array | Matrix} res
+	   *    math.pow(x, y)
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    math.pow(2, 3);               // returns Number 8
+	   *
+	   *    var a = math.complex(2, 3);
+	   *    math.pow(a, 2)                // returns Complex -5 + 12i
+	   *
+	   *    var b = [[1, 2], [4, 3]];
+	   *    math.pow(b, 2);               // returns Array [[9, 8], [16, 17]]
+	   *
+	   * See also:
+	   *
+	   *    multiply, sqrt
+	   *
+	   * @param  {Number | BigNumber | Boolean | Complex | Array | Matrix} x  The base
+	   * @param  {Number | BigNumber | Boolean | Complex} y                   The exponent
+	   * @return {Number | BigNumber | Complex | Array | Matrix} The value of `x` to the power `y`
 	   */
 	  math.pow = function pow(x, y) {
 	    if (arguments.length != 2) {
@@ -7582,17 +8038,37 @@ return /******/ (function(modules) { // webpackBootstrap
 	      isCollection = collection.isCollection;
 
 	  /**
-	   * Round a value towards the nearest integer
-	   *
-	   *     round(x)
-	   *     round(x, n)
-	   *
+	   * Round a value towards the nearest integer.
 	   * For matrices, the function is evaluated element wise.
 	   *
-	   * @param  {Number | BigNumber | Boolean | Complex | Array | Matrix} x
-	   * @param  {Number | BigNumber | Boolean | Array} [n] number of decimals (by default n=0)
-	   *                                                    Must be an integer between 0 and 15
-	   * @return {Number | BigNumber | Complex | Array | Matrix} res
+	   * Syntax:
+	   *
+	   *    math.round(x)
+	   *    math.round(x, n)
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    math.round(3.2);              // returns Number 3
+	   *    math.round(3.8);              // returns Number 4
+	   *    math.round(-4.2);             // returns Number -4
+	   *    math.round(-4.7);             // returns Number -5
+	   *    math.round(math.pi, 3);       // returns Number 3.14
+	   *    math.round(123.45678, 2);     // returns Number 123.46
+	   *
+	   *    var c = math.complex(3.2, -2.7);
+	   *    math.round(c);                // returns Complex 3 - 3i
+	   *
+	   *    math.round([3.2, 3.8, -4.7]); // returns Array [3, 4, -5]
+	   *
+	   * See also:
+	   *
+	   *    ceil, fix, floor
+	   *
+	   * @param  {Number | BigNumber | Boolean | Complex | Array | Matrix} x   Number to be rounded
+	   * @param  {Number | BigNumber | Boolean | Array} [n=0]                 Number of decimals
+	   * @return {Number | BigNumber | Complex | Array | Matrix} Rounded value
 	   */
 	  math.round = function round(x, n) {
 	    if (arguments.length != 1 && arguments.length != 2) {
@@ -7702,15 +8178,36 @@ return /******/ (function(modules) { // webpackBootstrap
 	      isCollection = collection.isCollection;
 
 	  /**
-	   * Compute the sign of a value.
+	   * Compute the sign of a value. The sign of a value x is:
 	   *
-	   *     sign(x)
+	   * -  1 when x > 1
+	   * - -1 when x < 0
+	   * -  0 when x == 0
 	   *
-	   * The sign of a value x is 1 when x > 1, -1 when x < 0, and 0 when x == 0
 	   * For matrices, the function is evaluated element wise.
 	   *
-	   * @param {Number | BigNumber | Boolean | Complex | Array | Matrix} x
-	   * @return {Number | BigNumber | Complex | Array | Matrix} res
+	   * Syntax:
+	   *
+	   *    math.sign(x)
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    math.sign(3.5);               // returns 1
+	   *    math.sign(-4.2);              // returns -1
+	   *    math.sign(0);                 // returns 0
+	   *
+	   *    math.sign([3, 5, -2, 0, 2]);  // returns [1, 1, -1, 0, 1]
+	   *
+	   * See also:
+	   *
+	   *    abs
+	   *
+	   * @param  {Number | BigNumber | Boolean | Complex | Array | Matrix} x
+	   *            The number for which to determine the sign
+	   * @return {Number | BigNumber | Complex | Array | Matrix}e
+	   *            The sign of `x`
 	   */
 	  math.sign = function sign(x) {
 	    if (arguments.length != 1) {
@@ -7764,20 +8261,36 @@ return /******/ (function(modules) { // webpackBootstrap
 	      isCollection = collection.isCollection;
 
 	  /**
-	   * Check if value x is smaller y
-	   *
-	   *     x < y
-	   *     smaller(x, y)
-	   *
-	   * For matrices, the function is evaluated element wise.
+	   * Test whether value x is smaller than y.
 	   *
 	   * The function returns true when x is smaller than y and the relative
 	   * difference between x and y is larger than the configured epsilon. The
 	   * function cannot be used to compare values smaller than approximately 2.22e-16.
 	   *
-	   * @param  {Number | BigNumber | Boolean | Unit | String | Array | Matrix} x
-	   * @param  {Number | BigNumber | Boolean | Unit | String | Array | Matrix} y
-	   * @return {Boolean | Array | Matrix} res
+	   * For matrices, the function is evaluated element wise.
+	   *
+	   * Syntax:
+	   *
+	   *    math.smaller(x, y)
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    math.smaller(2, 3);            // returns true
+	   *    math.smaller(5, 2 * 2);        // returns false
+	   *
+	   *    var a = math.unit('5 cm');
+	   *    var b = math.unit('2 inch');
+	   *    math.smaller(a, b);            // returns true
+	   *
+	   * See also:
+	   *
+	   *    equal, unequal, smallereq, larger, largereq, compare
+	   *
+	   * @param  {Number | BigNumber | Boolean | Unit | String | Array | Matrix} x First value to compare
+	   * @param  {Number | BigNumber | Boolean | Unit | String | Array | Matrix} y Second value to compare
+	   * @return {Boolean | Array | Matrix} Returns true when the x is smaller than y, else returns false
 	   */
 	  math.smaller = function smaller(x, y) {
 	    if (arguments.length != 2) {
@@ -7875,20 +8388,31 @@ return /******/ (function(modules) { // webpackBootstrap
 	      isCollection = collection.isCollection;
 
 	  /**
-	   * Check if value x is smaller or equal to y
-	   *
-	   *     x <= y
-	   *     smallereq(x, y)
-	   *
-	   * For matrices, the function is evaluated element wise.
+	   * Test whether value x is smaller or equal to y.
 	   *
 	   * The function returns true when x is smaller than y or the relative
 	   * difference between x and y is smaller than the configured epsilon. The
 	   * function cannot be used to compare values smaller than approximately 2.22e-16.
+	   * For matrices, the function is evaluated element wise.
 	   *
-	   * @param  {Number | BigNumber | Boolean | Complex | Unit | String | Array | Matrix} x
-	   * @param  {Number | BigNumber | Boolean | Complex | Unit | String | Array | Matrix} y
-	   * @return {Boolean | Array | Matrix} res
+	   * Syntax:
+	   *
+	   *    math.smallereq(x, y)
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    math.smaller(1 + 2, 3);        // returns false
+	   *    math.smallereq(1 + 2, 3);      // returns true
+	   *
+	   * See also:
+	   *
+	   *    equal, unequal, smaller, larger, largereq, compare
+	   *
+	   * @param  {Number | BigNumber | Boolean | Unit | String | Array | Matrix} x First value to compare
+	   * @param  {Number | BigNumber | Boolean | Unit | String | Array | Matrix} y Second value to compare
+	   * @return {Boolean | Array | Matrix} Returns true when the x is smaller than y, else returns false
 	   */
 	  math.smallereq = function smallereq(x, y) {
 	    if (arguments.length != 2) {
@@ -7982,14 +8506,30 @@ return /******/ (function(modules) { // webpackBootstrap
 	      isCollection = collection.isCollection;
 
 	  /**
-	   * Calculate the square root of a value
-	   *
-	   *     sqrt(x)
+	   * Calculate the square root of a value.
 	   *
 	   * For matrices, the function is evaluated element wise.
 	   *
+	   * Syntax:
+	   *
+	   *    math.sqrt(x)
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    math.sqrt(25);                // returns 5
+	   *    math.square(5);               // returns 25
+	   *    math.sqrt(-4);                // returns Complex -2i
+	   *
+	   * See also:
+	   *
+	   *    square, multiply
+	   *
 	   * @param {Number | Boolean | Complex | Array | Matrix} x
-	   * @return {Number | Complex | Array | Matrix} res
+	   *            Value for which to calculate the square root.
+	   * @return {Number | Complex | Array | Matrix}
+	   *            Returns the square root of `x`
 	   */
 	  math.sqrt = function sqrt (x) {
 	    if (arguments.length != 1) {
@@ -8061,15 +8601,32 @@ return /******/ (function(modules) { // webpackBootstrap
 	      isCollection = collection.isCollection;
 
 	  /**
-	   * Compute the square of a value
-	   *
-	   *     x .* x
-	   *     square(x)
-	   *
+	   * Compute the square of a value, `x * x`.
 	   * For matrices, the function is evaluated element wise.
 	   *
+	   * Syntax:
+	   *
+	   *    math.square(x)
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    math.square(2);           // returns Number 4
+	   *    math.square(3);           // returns Number 9
+	   *    math.pow(3, 2);           // returns Number 9
+	   *    math.multiply(3, 3);      // returns Number 9
+	   *
+	   *    math.square([1, 2, 3, 4]);  // returns Array [1, 4, 9, 16]
+	   *
+	   * See also:
+	   *
+	   *    multiply, cube, sqrt, pow
+	   *
 	   * @param  {Number | BigNumber | Boolean | Complex | Array | Matrix} x
-	   * @return {Number | BigNumber | Complex | Array | Matrix} res
+	   *            Number for which to calculate the square
+	   * @return {Number | BigNumber | Complex | Array | Matrix}
+	   *            Squared value
 	   */
 	  math.square = function square(x) {
 	    if (arguments.length != 1) {
@@ -8121,16 +8678,39 @@ return /******/ (function(modules) { // webpackBootstrap
 	      isCollection = collection.isCollection;
 
 	  /**
-	   * Subtract two values
-	   *
-	   *     x - y
-	   *     subtract(x, y)
-	   *
+	   * Subtract two values, `x - y`.
 	   * For matrices, the function is evaluated element wise.
 	   *
+	   * Syntax:
+	   *
+	   *    math.subtract(x, y)
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    math.subtract(5.3, 2);        // returns Number 3.3
+	   *
+	   *    var a = math.complex(2, 3);
+	   *    var b = math.complex(4, 1);
+	   *    math.subtract(a, b);          // returns Complex -2 + 2i
+	   *
+	   *    math.subtract([5, 7, 4], 4);  // returns Array [1, 3, 0]
+	   *
+	   *    var c = math.unit('2.1 km');
+	   *    var d = math.unit('500m');
+	   *    math.subtract(c, d);          // returns Unit 1.6 km
+	   *
+	   * See also:
+	   *
+	   *    add
+	   *
 	   * @param  {Number | BigNumber | Boolean | Complex | Unit | Array | Matrix} x
+	   *            Initial value
 	   * @param  {Number | BigNumber | Boolean | Complex | Unit | Array | Matrix} y
-	   * @return {Number | BigNumber | Complex | Unit | Array | Matrix} res
+	   *            Value to subtract from `x`
+	   * @return {Number | BigNumber | Complex | Unit | Array | Matrix}
+	   *            Subtraction of `x` and `y`
 	   */
 	  math.subtract = function subtract(x, y) {
 	    if (arguments.length != 2) {
@@ -8257,15 +8837,29 @@ return /******/ (function(modules) { // webpackBootstrap
 	      isCollection = collection.isCollection;
 
 	  /**
-	   * Inverse the sign of a value.
+	   * Inverse the sign of a value, apply a unary minus operation.
 	   *
-	   *     -x
-	   *     unary(x)
+	   * For matrices, the function is evaluated element wise. Boolean values will
+	   * be converted to a number. For complex numbers, both real and complex
+	   * value are inverted.
 	   *
-	   * For matrices, the function is evaluated element wise.
+	   * Syntax:
 	   *
-	   * @param  {Number | BigNumber | Boolean | Complex | Unit | Array | Matrix} x
-	   * @return {Number | BigNumber | Complex | Unit | Array | Matrix} res
+	   *    math.unary(x)
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    math.unary(3.5);      // returns -3.5
+	   *    math.unary(-4.2);     // returns 4.2
+	   *
+	   * See also:
+	   *
+	   *    add, subtract
+	   *
+	   * @param  {Number | BigNumber | Boolean | Complex | Unit | Array | Matrix} x Number to be inverted.
+	   * @return {Number | BigNumber | Complex | Unit | Array | Matrix} Returns the value with inverted sign.
 	   */
 	  math.unary = function unary(x) {
 	    if (arguments.length != 1) {
@@ -8327,16 +8921,37 @@ return /******/ (function(modules) { // webpackBootstrap
 	      isCollection = collection.isCollection;
 
 	  /**
-	   * Check if value x unequals y, x != y
-	   * In case of complex numbers, x.re must unequal y.re, or x.im must unequal y.im
+	   * Test whether two values are unequal.
 	   *
-	   * The function checks whether the relative difference between x and y is
+	   * The function tests whether the relative difference between x and y is
 	   * larger than the configured epsilon. The function cannot be used to compare
 	   * values smaller than approximately 2.22e-16.
 	   *
-	   * @param  {Number | BigNumber | Boolean | Complex | Unit | String | Array | Matrix} x
-	   * @param  {Number | BigNumber | Boolean | Complex | Unit | String | Array | Matrix} y
-	   * @return {Boolean | Array | Matrix} res
+	   * For matrices, the function is evaluated element wise.
+	   * In case of complex numbers, x.re must unequal y.re, or x.im must unequal y.im.
+	   *
+	   * Syntax:
+	   *
+	   *    math.unequal(x, y)
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    math.unequal(2 + 2, 3);       // returns true
+	   *    math.unequal(2 + 2, 4);       // returns false
+	   *
+	   *    var a = math.unit('50 cm');
+	   *    var b = math.unit('5 m');
+	   *    math.unequal(a, b);           // returns false
+	   *
+	   * See also:
+	   *
+	   *    equal, smaller, smallereq, larger, largereq, compare
+	   *
+	   * @param  {Number | BigNumber | Boolean | Complex | Unit | String | Array | Matrix} x First value to compare
+	   * @param  {Number | BigNumber | Boolean | Complex | Unit | String | Array | Matrix} y Second value to compare
+	   * @return {Boolean | Array | Matrix} Returns true when the compared values are unequal, else returns false
 	   */
 	  math.unequal = function unequal(x, y) {
 	    if (arguments.length != 2) {
@@ -8438,15 +9053,28 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	  /**
 	   * Calculate the extended greatest common divisor for two values.
+	   * See http://en.wikipedia.org/wiki/Extended_Euclidean_algorithm.
 	   *
-	   *     xgcd(a, b)
+	   * Syntax:
+	   *
+	   *    math.xgcd(a, b)
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    math.xgcd(8, 12);             // returns [4, -1, 1]
+	   *    math.gcd(8, 12);              // returns 4
+	   *    math.xgcd(36163, 21199);      // returns [1247, -7, 12]
+	   *
+	   * See also:
+	   *
+	   *    gcd, lcm
 	   *
 	   * @param {Number | Boolean} a  An integer number
 	   * @param {Number | Boolean} b  An integer number
-	   * @return {Array}              An array containing 3 integers [div, m, n]
-	   *                              where div = gcd(a, b) and a*m + b*n = div
-	   *
-	   * @see http://en.wikipedia.org/wiki/Extended_Euclidean_algorithm
+	   * @return {Array}              Returns an array containing 3 integers `[div, m, n]`
+	   *                              where `div = gcd(a, b)` and `a*m + b*n = div`
 	   */
 	  math.xgcd = function xgcd(a, b) {
 	    if (arguments.length == 2) {
@@ -8490,7 +9118,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	   * @private
 	   */
 	  function _xgcd(a, b) {
-	    //*
 	    // source: http://en.wikipedia.org/wiki/Extended_Euclidean_algorithm
 	    var t, // used to swap two variables
 	        q, // quotient
@@ -8542,14 +9169,32 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	  /**
 	   * Compute the argument of a complex value.
-	   * If x = a + bi, the argument is computed as atan2(b, a).
-	   *
-	   *     arg(x)
+	   * For a complex number `a + bi`, the argument is computed as `atan2(b, a)`.
 	   *
 	   * For matrices, the function is evaluated element wise.
 	   *
+	   * Syntax:
+	   *
+	   *    math.arg(x)
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    var a = math.complex(2, 2);
+	   *    math.arg(a) / math.pi;          // returns Number 0.25
+	   *
+	   *    var b = math.complex('2 + 3i');
+	   *    math.arg(b);                    // returns Number 0.982793723247329
+	   *    math.atan2(3, 2);               // returns Number 0.982793723247329
+	   *
+	   * See also:
+	   *
+	   *    re, im, conj, abs
+	   *
 	   * @param {Number | Complex | Array | Matrix | Boolean} x
-	   * @return {Number | Array | Matrix} res
+	   *            A complex number or array with complex numbers
+	   * @return {Number | Array | Matrix} The argument of x
 	   */
 	  math.arg = function arg(x) {
 	    if (arguments.length != 1) {
@@ -8602,14 +9247,30 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	  /**
 	   * Compute the complex conjugate of a complex value.
-	   * If x = a+bi, the complex conjugate is a-bi.
-	   *
-	   *     conj(x)
+	   * If `x = a+bi`, the complex conjugate of `x` is `a - bi`.
 	   *
 	   * For matrices, the function is evaluated element wise.
 	   *
+	   * Syntax:
+	   *
+	   *    math.conj(x)
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    math.conj(math.complex('2 + 3i'));  // returns Complex 2 - 3i
+	   *    math.conj(math.complex('2 - 3i'));  // returns Complex 2 + 3i
+	   *    math.conj(math.complex('-5.2i'));  // returns Complex 5.2i
+	   *
+	   * See also:
+	   *
+	   *    re, im, arg, abs
+	   *
 	   * @param {Number | BigNumber | Complex | Array | Matrix | Boolean} x
-	   * @return {Number | BigNumber | Complex | Array | Matrix} res
+	   *            A complex number or array with complex numbers
+	   * @return {Number | BigNumber | Complex | Array | Matrix}
+	   *            The complex conjugate of x
 	   */
 	  math.conj = function conj(x) {
 	    if (arguments.length != 1) {
@@ -8661,13 +9322,32 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	  /**
 	   * Get the real part of a complex number.
-	   *
-	   *     re(x)
+	   * For a complex number `a + bi`, the function returns `a`.
 	   *
 	   * For matrices, the function is evaluated element wise.
 	   *
+	   * Syntax:
+	   *
+	   *    math.re(x)
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    var a = math.complex(2, 3);
+	   *    math.re(a);                     // returns Number 2
+	   *    math.im(a);                     // returns Number 3
+	   *
+	   *    math.re(math.complex('-5.2i')); // returns Number 0
+	   *    math.re(math.complex(2.4));     // returns Number 2.4
+	   *
+	   * See also:
+	   *
+	   *    im, conj, abs, arg
+	   *
 	   * @param {Number | BigNumber | Complex | Array | Matrix | Boolean} x
-	   * @return {Number | BigNumber | Array | Matrix} re
+	   *            A complex number or array with complex numbers
+	   * @return {Number | BigNumber | Array | Matrix} The real part of x
 	   */
 	  math.re = function re(x) {
 	    if (arguments.length != 1) {
@@ -8718,13 +9398,32 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	  /**
 	   * Get the imaginary part of a complex number.
-	   *
-	   *     im(x)
+	   * For a complex number `a + bi`, the function returns `b`.
 	   *
 	   * For matrices, the function is evaluated element wise.
 	   *
+	   * Syntax:
+	   *
+	   *    math.im(x)
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    var a = math.complex(2, 3);
+	   *    math.re(a);                     // returns Number 2
+	   *    math.im(a);                     // returns Number 3
+	   *
+	   *    math.re(math.complex('-5.2i')); // returns Number -5.2
+	   *    math.re(math.complex(2.4));     // returns Number 0
+	   *
+	   * See also:
+	   *
+	   *    re, conj, abs, arg
+	   *
 	   * @param {Number | BigNumber | Complex | Array | Matrix | Boolean} x
-	   * @return {Number | BigNumber | Array | Matrix} im
+	   *            A complex number or array with complex numbers
+	   * @return {Number | BigNumber | Array | Matrix} The imaginary part of x
 	   */
 	  math.im = function im(x) {
 	    if (arguments.length != 1) {
@@ -8774,12 +9473,31 @@ return /******/ (function(modules) { // webpackBootstrap
 	      isBoolean = util['boolean'].isBoolean;
 
 	  /**
-	   * Create a big number, which can store numbers with higher precision than
-	   * a JavaScript Number.
-	   * When value is a matrix, all elements will be converted to bignumber.
+	   * Create a BigNumber, which can store numbers with arbitrary precision.
+	   * When a matrix is provided, all elements will be converted to BigNumber.
+	   *
+	   * Syntax:
+	   *
+	   *    math.bignumber(x)
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    0.1 + 0.2;                                  // returns Number 0.30000000000000004
+	   *    math.bignumber(0.1) + math.bignumber(0.2);  // returns BigNumber 0.3
+	   *
+	   *
+	   *    7.2e500;                                    // returns Number Infinity
+	   *    math.bignumber('7.2e500');                  // returns BigNumber 7.2e500
+	   *
+	   * See also:
+	   *
+	   *    boolean, complex, index, matrix, string, unit
 	   *
 	   * @param {Number | String | Array | Matrix} [value]  Value for the big number,
 	   *                                                    0 by default.
+	   * @returns {BigNumber} The created bignumber
 	   */
 	  math.bignumber = function bignumber(value) {
 	    if (arguments.length > 1) {
@@ -8823,12 +9541,32 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	  /**
 	   * Create a boolean or convert a string or number to a boolean.
-	   * In case of a number, true is returned for non-zero numbers, and false in
+	   * In case of a number, `true` is returned for non-zero numbers, and `false` in
 	   * case of zero.
-	   * Strings can be 'true' or 'false', or can contain a number.
+	   * Strings can be `'true'` or `'false'`, or can contain a number.
 	   * When value is a matrix, all elements will be converted to boolean.
-	   * @param {String | Number | Boolean | Array | Matrix} value
-	   * @return {Boolean | Array | Matrix} bool
+	   *
+	   * Syntax:
+	   *
+	   *    math.boolean(x)
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    math.boolean(0);     // returns false
+	   *    math.boolean(1);     // returns true
+	   *    math.boolean(-3);     // returns true
+	   *    math.boolean('true');     // returns true
+	   *    math.boolean('false');     // returns false
+	   *    math.boolean([1, 0, 1, 1]);     // returns [true, false, true, true]
+	   *
+	   * See also:
+	   *
+	   *    bignumber, complex, index, matrix, string, unit
+	   *
+	   * @param {String | Number | Boolean | Array | Matrix} value  A value of any type
+	   * @return {Boolean | Array | Matrix} The boolean value
 	   */
 	  math['boolean'] = function bool (value) {
 	    if (arguments.length != 1) {
@@ -8900,33 +9638,42 @@ return /******/ (function(modules) { // webpackBootstrap
 	  /**
 	   * Create a complex value or convert a value to a complex value.
 	   *
-	   * The method accepts the following arguments:
-	   *     complex()                           creates a complex value with zero
-	   *                                         as real and imaginary part.
-	   *     complex(re : number, im : string)   creates a complex value with provided
-	   *                                         values for real and imaginary part.
-	   *     complex(re : number)                creates a complex value with provided
-	   *                                         real value and zero imaginary part.
-	   *     complex(complex : Complex)          clones the provided complex value.
-	   *     complex(arg : string)               parses a string into a complex value.
-	   *     complex(array : Array)              converts the elements of the array
-	   *                                         or matrix element wise into a
-	   *                                         complex value.
-	   *     complex({re: number, im: number})   creates a complex value with provided
-	   *                                         values for real an imaginary part.
-	   *     complex({r: number, phi: number})   creates a complex value with provided
-	   *                                         polar coordinates
+	   * Syntax:
 	   *
-	   * Example usage:
-	   *     var a = math.complex(3, -4);     // 3 - 4i
-	   *     a.re = 5;                        // a = 5 - 4i
-	   *     var i = a.im;                    // -4;
-	   *     var b = math.complex('2 + 6i');  // 2 + 6i
-	   *     var c = math.complex();          // 0 + 0i
-	   *     var d = math.add(a, b);          // 5 + 2i
+	   *     math.complex()                           // creates a complex value with zero
+	   *                                              // as real and imaginary part.
+	   *     math.complex(re : number, im : string)   // creates a complex value with provided
+	   *                                              // values for real and imaginary part.
+	   *     math.complex(re : number)                // creates a complex value with provided
+	   *                                              // real value and zero imaginary part.
+	   *     math.complex(complex : Complex)          // clones the provided complex value.
+	   *     math.complex(arg : string)               // parses a string into a complex value.
+	   *     math.complex(array : Array)              // converts the elements of the array
+	   *                                              // or matrix element wise into a
+	   *                                              // complex value.
+	   *     math.complex({re: number, im: number})   // creates a complex value with provided
+	   *                                              // values for real an imaginary part.
+	   *     math.complex({r: number, phi: number})   // creates a complex value with provided
+	   *                                              // polar coordinates
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    var a = math.complex(3, -4);     // a = Complex 3 - 4i
+	   *    a.re = 5;                        // a = Complex 5 - 4i
+	   *    var i = a.im;                    // Number -4;
+	   *    var b = math.complex('2 + 6i');  // Complex 2 + 6i
+	   *    var c = math.complex();          // Complex 0 + 0i
+	   *    var d = math.add(a, b);          // Complex 5 + 2i
+	   *
+	   * See also:
+	   *
+	   *    bignumber, boolean, index, matrix, number, string, unit
 	   *
 	   * @param {* | Array | Matrix} [args]
-	   * @return {Complex | Array | Matrix} value
+	   *            Arguments specifying the real and imaginary part of the complex number
+	   * @return {Complex | Array | Matrix} Returns a complex value
 	   */
 	  math.complex = function complex(args) {
 	    switch (arguments.length) {
@@ -9020,18 +9767,39 @@ return /******/ (function(modules) { // webpackBootstrap
 	   * for multiple dimensions.
 	   * Matrix.get, Matrix.set, and math.subset accept an Index as input.
 	   *
-	   * Usage:
-	   *     var index = math.index(range1, range2, ...);
+	   * Syntax:
 	   *
-	   * Where each range can be any of:
-	   *     An array [start, end]
-	   *     An array [start, end, step]
-	   *     A number
-	   *     null, this will create select the whole dimension
+	   *     math.index(range1, range2, ...);
 	   *
-	   * The parameters start, end, and step must be integer numbers.
+	   * Where:
 	   *
-	   * @param {...*} ranges
+	   * Each range can be any of:
+	   *
+	   * - An array [start, end]
+	   * - An array [start, end, step]
+	   * - A number
+	   * - An instance of `Range`
+	   *
+	   * The parameters start, end, and step must be integer numbers. Start and end
+	   * are zero based. The start of a range is included, the end is excluded.
+	   *
+	   * Examples:
+	   *
+	   *    var math = math.js
+	   *
+	   *    var b = [1, 2, 3, 4, 5];
+	   *    math.subset(b, math.index([1, 3]));     // returns [2, 3]
+	   *
+	   *    var a = math.matrix([[1, 2], [3, 4]]);
+	   *    a.subset(math.index(0, 1));             // returns 2
+	   *    a.subset(math.index(1, null));          // returns [3, 4]
+	   *
+	   * See also:
+	   *
+	   *    bignumber, boolean, complex, matrix, number, string, unit
+	   *
+	   * @param {...*} ranges   Zero or more ranges or numbers.
+	   * @return {Index}        Returns the created index
 	   */
 	  math.index = function matrix(ranges) {
 	    var i = new Index();
@@ -9066,21 +9834,31 @@ return /******/ (function(modules) { // webpackBootstrap
 	      Matrix = __webpack_require__(8);
 
 	  /**
-	   * Create a matrix. The function creates a new math.type.Matrix object.
+	   * Create a Matrix. The function creates a new `math.type.Matrix` object from
+	   * an `Array`. A Matrix has utility functions to manipulate the data in the
+	   * matrix, like getting the size and getting or setting values in the matrix.
 	   *
-	   * The method accepts the following arguments:
-	   *     matrix()       creates an empty matrix
-	   *     matrix(data)   creates a matrix with initial data.
+	   * Syntax:
 	   *
-	   * Example usage:
-	   *     var m = matrix([[1, 2], [3, 4]);
-	   *     m.size();                        // [2, 2]
-	   *     m.resize([3, 2], 5);
-	   *     m.valueOf();                     // [[1, 2], [3, 4], [5, 5]]
-	   *     m.get([1, 0])                    // 3
+	   *    math. matrix()     // creates an empty matrix
+	   *    math.matrix(data)  // creates a matrix with initial data.
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    var m = math.matrix([[1, 2], [3, 4]);
+	   *    m.size();                        // Array [2, 2]
+	   *    m.resize([3, 2], 5);
+	   *    m.valueOf();                     // Array [[1, 2], [3, 4], [5, 5]]
+	   *    m.get([1, 0])                    // number 3
+	   *
+	   * See also:
+	   *
+	   *    bignumber, boolean, complex, index, number, string, unit
 	   *
 	   * @param {Array | Matrix} [data]    A multi dimensional array
-	   * @return {Matrix} matrix
+	   * @return {Matrix} The created matrix
 	   */
 	  math.matrix = function matrix(data) {
 	    if (arguments.length > 1) {
@@ -9110,8 +9888,26 @@ return /******/ (function(modules) { // webpackBootstrap
 	  /**
 	   * Create a number or convert a string to a number.
 	   * When value is a matrix, all elements will be converted to number.
-	   * @param {String | Number | Boolean | Array | Matrix} [value]
-	   * @return {Number | Array | Matrix} num
+	   *
+	   * Syntax:
+	   *
+	   *    math.number(value)
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    math.number(2);                         // returns number 2
+	   *    math.number('7.2');                     // returns number 7.2
+	   *    math.number(true);                      // returns number 1
+	   *    math.number([true, false, true, true]); // returns [1, 0, 1, 1]
+	   *
+	   * See also:
+	   *
+	   *    bignumber, boolean, complex, index, matrix, string, unit
+	   *
+	   * @param {String | Number | Boolean | Array | Matrix} [value]  Value to be converted
+	   * @return {Number | Array | Matrix} The created number
 	   */
 	  math.number = function number (value) {
 	    switch (arguments.length) {
@@ -9163,11 +9959,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	  var Parser = __webpack_require__(13);
 
 	  /**
-	   * Create a parser. The function creates a new math.expression.Parser object.
+	   * Create a parser. The function creates a new `math.expression.Parser` object.
 	   *
-	   *    parser()
+	   * Syntax:
 	   *
-	   * Example usage:
+	   *    math.parser()
+	   *
+	   * Examples:
+	   *
 	   *     var parser = new math.parser();
 	   *
 	   *     // evaluate expressions
@@ -9189,12 +9988,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	   *     parser.set('h', 500);
 	   *     var i = parser.eval('h / 2');           // 250
 	   *     parser.set('hello', function (name) {
-	 *         return 'hello, ' + name + '!';
-	 *     });
+	   *       return 'hello, ' + name + '!';
+	   *     });
 	   *     parser.eval('hello("user")');           // "hello, user!"
 	   *
 	   *     // clear defined functions and variables
 	   *     parser.clear();
+	   *
+	   * See also:
+	   *
+	   *    eval, compile, parse
 	   *
 	   * @return {Parser} Parser
 	   */
@@ -9215,33 +10018,36 @@ return /******/ (function(modules) { // webpackBootstrap
 	   *
 	   * All methods available in the math.js library can be called upon the selector,
 	   * and then will be evaluated with the value itself as first argument.
-	   * The selector can be closed by executing selector.done(), which will return
+	   * The selector can be closed by executing `selector.done()`, which returns
 	   * the final value.
 	   *
-	   * Example usage:
+	   * The Selector has a number of special functions:
+	   *
+	   * - `done()`     Finalize the chained operation and return the selectors value.
+	   * - `valueOf()`  The same as `done()`
+	   * - `toString()` Executes `math.format()` onto the selectors value, returning
+	   *                a string representation of the value.
+	   *
+	   * Syntax:
+	   *
+	   *    math.select(value)
+	   *
+	   * Examples:
+	   *
+	   *     var math = mathjs();
+	   *
 	   *     math.select(3)
 	   *         .add(4)
 	   *         .subtract(2)
 	   *         .done();     // 5
+	   *
 	   *     math.select( [[1, 2], [3, 4]] )
 	   *         .set([1, 1], 8)
 	   *         .multiply(3)
 	   *         .done();     // [[24, 6], [9, 12]]
 	   *
-	   * The Selector has a number of special functions:
-	   * - done()     Finalize the chained operation and return the selectors value.
-	   * - valueOf()  The same as done()
-	   * - toString() Executes math.format() onto the selectors value, returning
-	   *              a string representation of the value.
-	   * - get(...)   Get a subselection of the selectors value. Only applicable when
-	   *              the value has a method get, for example when value is a Matrix
-	   *              or Array.
-	   * - set(...)   Replace a subselection of the selectors value. Only applicable
-	   *              when the value has a method get, for example when value is a
-	   *              Matrix or Array.
-	   *
-	   * @param {*} value
-	   * @return {math.chaining.Selector} selector
+	   * @param {*} [value]   A value of any type on which to start a chained operation.
+	   * @return {math.chaining.Selector} The created selector
 	   */
 	  math.select = function select(value) {
 	    // TODO: check number of arguments
@@ -9265,9 +10071,30 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	  /**
 	   * Create a string or convert any object into a string.
-	   * Elements of Arrays and Matrices are processed element wise
-	   * @param {* | Array | Matrix} [value]
-	   * @return {String | Array | Matrix} str
+	   * Elements of Arrays and Matrices are processed element wise.
+	   *
+	   * Syntax:
+	   *
+	   *    math.string(value)
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    math.string(4.2);               // returns string '4.2'
+	   *    math.string(math.complex(3, 2); // returns string '3 + 2i'
+	   *
+	   *    var u = math.unit(5, 'km');
+	   *    math.string(u.to('m'));         // returns string '5000 m'
+	   *
+	   *    math.string([true, false]);     // returns ['true', 'false']
+	   *
+	   * See also:
+	   *
+	   *    bignumber, boolean, complex, index, matrix, number, unit
+	   *
+	   * @param {* | Array | Matrix} [value]  A value to convert to a string
+	   * @return {String | Array | Matrix} The created string
 	   */
 	  math.string = function string (value) {
 	    switch (arguments.length) {
@@ -9315,17 +10142,25 @@ return /******/ (function(modules) { // webpackBootstrap
 	   * will create and return a new math.type.Unit object.
 	   * When a matrix is provided, all elements will be converted to units.
 	   *
-	   * The method accepts the following arguments:
-	   *     unit(unit : string)
-	   *     unit(value : number, unit : string)
+	   * Syntax:
 	   *
-	   * Example usage:
-	   *     var a = math.unit(5, 'cm');          // 50 mm
-	   *     var b = math.unit('23 kg');          // 23 kg
-	   *     var c = math.in(a, math.unit('m');   // 0.05 m
+	   *     math.unit(unit : string)
+	   *     math.unit(value : number, unit : string)
 	   *
-	   * @param {* | Array | Matrix} args
-	   * @return {Unit | Array | Matrix} value
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    var a = math.unit(5, 'cm');    // returns Unit 50 mm
+	   *    var b = math.unit('23 kg');    // returns Unit 23 kg
+	   *    a.to('m');                     // returns Unit 0.05 m
+	   *
+	   * See also:
+	   *
+	   *    bignumber, boolean, complex, index, matrix, number, string
+	   *
+	   * @param {* | Array | Matrix} args   A number and unit.
+	   * @return {Unit | Array | Matrix}    The created unit
 	   */
 	  math.unit = function unit(args) {
 	    switch(arguments.length) {
@@ -9392,16 +10227,34 @@ return /******/ (function(modules) { // webpackBootstrap
 	      isCollection = collection.isCollection;
 
 	  /**
-	   * Concatenate two or more matrices
-	   * Usage:
+	   * Concatenate two or more matrices.
+	   *
+	   * Syntax:
+	   *
 	   *     math.concat(A, B, C, ...)
 	   *     math.concat(A, B, C, ..., dim)
 	   *
-	   * Where the optional dim is the zero-based number of the dimension to be
-	   * concatenated.
+	   * Where:
 	   *
-	   * @param {... Array | Matrix} args
-	   * @return {Array | Matrix} res
+	   * - `dim: number` is a zero-based dimension over which to concatenate the matrices.
+	   *   By default the last dimension of the matrices.
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    var A = [[1, 2], [5, 6]];
+	   *    var B = [[3, 4], [7, 8]];
+	   *
+	   *    math.concat(A, B);      // returns [[1, 2, 3, 4], [5, 6, 7, 8]]
+	   *    math.concat(A, B, 0);   // returns [[1, 2], [5, 6], [3, 4], [7, 8]]
+	   *
+	   * See also:
+	   *
+	   *    size, squeeze, subset, transpose
+	   *
+	   * @param {... Array | Matrix} args     Two or more matrices
+	   * @return {Array | Matrix} Concatenated matrix
 	   */
 	  math.concat = function concat (args) {
 	    var i,
@@ -9507,13 +10360,31 @@ return /******/ (function(modules) { // webpackBootstrap
 	      string = util.string;
 
 	  /**
-	   * @constructor det
-	   * Calculate the determinant of a matrix
+	   * Calculate the determinant of a matrix.
 	   *
-	   *     det(x)
+	   * Syntax:
 	   *
-	   * @param {Array | Matrix} x
-	   * @return {Number} determinant
+	   *    math.det(x)
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    math.det([[1, 2], [3, 4]]); // returns -2
+	   *
+	   *    var A = [
+	   *      [-2, 2, 3],
+	   *      [-1, 1, 3],
+	   *      [2, 0, -1]
+	   *    ]
+	   *    math.det(A); // returns 6
+	   *
+	   * See also:
+	   *
+	   *    inv
+	   *
+	   * @param {Array | Matrix} x  A matrix
+	   * @return {Number} The determinant of `x`
 	   */
 	  math.det = function det (x) {
 	    if (arguments.length != 1) {
@@ -9655,16 +10526,37 @@ return /******/ (function(modules) { // webpackBootstrap
 	  /**
 	   * Create a diagonal matrix or retrieve the diagonal of a matrix
 	   *
-	   *     diag(v)
-	   *     diag(v, k)
-	   *     diag(X)
-	   *     diag(X, k)
+	   * When `x` is a vector, a matrix with vector `x` on the diagonal will be returned.
+	   * When `x` is a two dimensional matrix, the matrixes `k`th diagonal will be returned as vector.
+	   * When k is positive, the values are placed on the super diagonal.
+	   * When k is negative, the values are placed on the sub diagonal.
 	   *
-	   * TODO: more documentation on diag
+	   * Syntax:
 	   *
-	   * @param {Matrix | Array} x
-	   * @param {Number | BigNumber} [k]
-	   * @return {Matrix | Array} matrix
+	   *     math.diag(X)
+	   *     math.diag(X, k)
+	   *
+	   * Examples:
+	   *
+	   *     var math = mathjs();
+	   *
+	   *     // create a diagonal matrix
+	   *     math.diag([1, 2, 3]);      // returns [[1, 0, 0], [0, 2, 0], [0, 0, 3]]
+	   *     math.diag([1, 2, 3], 1);   // returns [[0, 1, 0, 0], [0, 0, 2, 0], [0, 0, 0, 3]]
+	   *     math.diag([1, 2, 3], -1);  // returns [[0, 0, 0], [1, 0, 0], [0, 2, 0], [0, 0, 3]]
+	   *
+	   *    // retrieve the diagonal from a matrix
+	   *    var a = [[1, 2, 3], [4, 5, 6], [7, 8, 9]];
+	   *    math.diag(a);   // returns [1, 5, 9]
+	   *
+	   * See also:
+	   *
+	   *     ones, zeros, eye
+	   *
+	   * @param {Matrix | Array} x          A two dimensional matrix or a vector
+	   * @param {Number | BigNumber} [k=0]  The diagonal where the vector will be filled
+	   *                                    in or retrieved.
+	   * @returns {Matrix | Array} Diagonal matrix from input vector, or diagonal from input matrix.
 	   */
 	  math.diag = function diag (x, k) {
 	    var data, vector, i, iMax;
@@ -9749,16 +10641,29 @@ return /******/ (function(modules) { // webpackBootstrap
 	      isArray = Array.isArray;
 
 	  /**
-	   * Create a 2-dimensional identity matrix with size m x n or n x n
+	   * Create a 2-dimensional identity matrix with size m x n or n x n.
+	   * The matrix has ones on the diagonal and zeros elsewhere.
 	   *
-	   *     eye(n)
-	   *     eye(m, n)
-	   *     eye([m, n])
+	   * Syntax:
 	   *
-	   * TODO: more documentation on eye
+	   *    math.eye(n)
+	   *    math.eye(m, n)
+	   *    math.eye([m, n])
 	   *
-	   * @param {...Number | Matrix | Array} size
-	   * @return {Matrix | Array | Number} matrix
+	   * Examples:
+	   *
+	   *    math.eye(3);                    // returns [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
+	   *    math.eye(3, 2);                 // returns [[1, 0], [0, 1], [0, 0]]
+	   *
+	   *    var A = [[1, 2, 3], [4, 5, 6]];
+	   *    math.eye(math.size(b));         // returns [[1, 0, 0], [0, 1, 0]]
+	   *
+	   * See also:
+	   *
+	   *    diag, ones, zeros, size, range
+	   *
+	   * @param {...Number | Matrix | Array} size   The size for the matrix
+	   * @return {Matrix | Array | Number} A matrix with ones on the diagonal.
 	   */
 	  math.eye = function eye (size) {
 	    var args = collection.argsToArray(arguments),
@@ -9829,18 +10734,27 @@ return /******/ (function(modules) { // webpackBootstrap
 	  var util = __webpack_require__(123),
 	      string = util.string,
 
-	      Matrix = __webpack_require__(8),
-	      collection = __webpack_require__(11);
+	      Matrix = __webpack_require__(8);
 
 	  /**
-	   * Calculate the inverse of a matrix
+	   * Calculate the inverse of a square matrix.
 	   *
-	   *     inv(x)
+	   * Syntax:
 	   *
-	   * TODO: more documentation on inv
+	   *     math.inv(x)
 	   *
-	   * @param {Number | Complex | Array | Matrix} x
-	   * @return {Number | Complex | Array | Matrix} inv
+	   * Examples:
+	   *
+	   *     math.inv([[1, 2], [3, 4]]);  // returns [[-2, 1], [1.5, -0.5]]
+	   *     math.inv(4);                 // returns 0.25
+	   *     1 / 4;                       // returns 0.25
+	   *
+	   * See also:
+	   *
+	   *     det, transpose
+	   *
+	   * @param {Number | Complex | Array | Matrix} x     Matrix to be inversed
+	   * @return {Number | Complex | Array | Matrix} The inverse of `x`.
 	   */
 	  math.inv = function inv (x) {
 	    if (arguments.length != 1) {
@@ -10025,15 +10939,30 @@ return /******/ (function(modules) { // webpackBootstrap
 	      isArray = Array.isArray;
 
 	  /**
-	   * Create a matrix filled with ones
+	   * Create a matrix filled with ones. The created matrix can have one or
+	   * multiple dimensions.
 	   *
-	   *     ones(m)
-	   *     ones(m, n)
-	   *     ones([m, n])
-	   *     ones([m, n, p, ...])
+	   * Syntax:
 	   *
-	   * @param {...Number | Array} size
-	   * @return {Array | Matrix | Number} matrix
+	   *    math.ones(m)
+	   *    math.ones(m, n)
+	   *    math.ones([m, n])
+	   *    math.ones([m, n, p, ...])
+	   *
+	   * Examples:
+	   *
+	   *    math.ones(3);                   // returns [1, 1, 1]
+	   *    math.ones(3, 2);                // returns [[1, 1], [1, 1], [1, 1]]
+	   *
+	   *    var A = [[1, 2, 3], [4, 5, 6]];
+	   *    math.zeros(math.size(A));       // returns [[1, 1, 1], [1, 1, 1]]
+	   *
+	   * See also:
+	   *
+	   *    zeros, eye, size, range
+	   *
+	   * @param {...Number | Array} size    The size of each dimension of the matrix
+	   * @return {Array | Matrix | Number}  A matrix filled with ones
 	   */
 	  math.ones = function ones (size) {
 	    var args = collection.argsToArray(arguments);
@@ -10089,32 +11018,44 @@ return /******/ (function(modules) { // webpackBootstrap
 	   * By default, the range end is excluded. This can be customized by providing
 	   * an extra parameter `includeEnd`.
 	   *
-	   * The method accepts the following arguments
-	   *     range(str [, includeEnd])              Create a range from a string,
-	   *                                            where the string contains the
-	   *                                            start, optional step, and end,
-	   *                                            separated by a colon.
-	   *     range(start, end [, includeEnd])       Create a range with start and
-	   *                                            end and a step size of 1.
-	   *     range(start, end, step [, includeEnd]) Create a range with start, step,
-	   *                                            and end.
+	   * Syntax:
+	   *
+	   *     range(str [, includeEnd])              // Create a range from a string,
+	   *                                            // where the string contains the
+	   *                                            // start, optional step, and end,
+	   *                                            // separated by a colon.
+	   *     range(start, end [, includeEnd])       // Create a range with start and
+	   *                                            // end and a step size of 1.
+	   *     range(start, end, step [, includeEnd]) // Create a range with start, step,
+	   *                                            // and end.
 	   *
 	   * Where:
-	   *     {String} str
-	   *     {Number | BigNumber} start   Start of the range
-	   *     {Number | BigNumber} end     End of the range, excluded by default,
-	   *                                  included when parameter includeEnd=true
-	   *     {Number | BigNumber} step=1  Step size.
-	   *     {boolean} includeEnd=false   Option to specify whether to include
-	   *                                  the end or not.
 	   *
-	   * Example usage:
-	   *     math.range(2, 6);        // [2,3,4,5]
-	   *     math.range(2, -3, -1);   // [2,1,0,-1,-2]
-	   *     math.range('2:1:6');     // [2,3,4,5]
-	   *     math.range(2, 6, true);  // [2,3,4,5,6]
+	   * - `str: String`
+	   *   A string 'start:end' or 'start:step:end'
+	   * - `start: {Number | BigNumber}`
+	   *   Start of the range
+	   * - `end: Number | BigNumber`
+	   *   End of the range, excluded by default, included when parameter includeEnd=true
+	   * - `step: Number | BigNumber`
+	   *   Step size. Default value is 1.
+	   * - `includeEnd: boolean`
+	   *   Option to specify whether to include the end or not. False by default.
 	   *
-	   * @param {...*} args
+	   * Examples:
+	   *
+	   *     var math = mathjs();
+	   *
+	   *     math.range(2, 6);        // [2, 3, 4, 5]
+	   *     math.range(2, -3, -1);   // [2, 1, 0, -1, -2]
+	   *     math.range('2:1:6');     // [2, 3, 4, 5]
+	   *     math.range(2, 6, true);  // [2, 3, 4, 5, 6]
+	   *
+	   * See also:
+	   *
+	   *     ones, zeros, size, subset
+	   *
+	   * @param {*} args   Parameters describing the ranges `start`, `end`, and optional `step`.
 	   * @return {Array | Matrix} range
 	   */
 	  math.range = function range(args) {
@@ -10404,15 +11345,30 @@ return /******/ (function(modules) { // webpackBootstrap
 	  /**
 	   * Resize a matrix
 	   *
-	   *     resize(x, size)
-	   *     resize(x, size, defaultValue)
+	   * Syntax:
 	   *
-	   * @param {* | Array | Matrix} x
+	   *     math.resize(x, size)
+	   *     math.resize(x, size, defaultValue)
+	   *
+	   * Examples:
+	   *
+	   *     var math = mathjs();
+	   *
+	   *     math.resize([1, 2, 3, 4, 5], [3]); // returns Array  [1, 2, 3]
+	   *     math.resize([1, 2, 3], [5], 0);    // returns Array  [1, 2, 3, 0, 0]
+	   *     math.resize(2, [2, 3], 0);         // returns Matrix [[2, 0, 0], [0, 0, 0]]
+	   *     math.resize("hello", [8], "!");    // returns String 'hello!!!'
+	   *
+	   * See also:
+	   *
+	   *     size, squeeze, subset
+	   *
+	   * @param {* | Array | Matrix} x            Matrix to be resized
 	   * @param {Array | Matrix} size             One dimensional array with numbers
 	   * @param {Number | String} [defaultValue]  Undefined by default, except in
 	   *                                          case of a string, in that case
 	   *                                          defaultValue = ' '
-	   * @return {* | Array | Matrix} res
+	   * @return {* | Array | Matrix} A resized clone of matrix `x`
 	   */
 	  math.resize = function resize (x, size, defaultValue) {
 	    if (arguments.length != 2 && arguments.length != 3) {
@@ -10523,12 +11479,29 @@ return /******/ (function(modules) { // webpackBootstrap
 	      isUnit = Unit.isUnit;
 
 	  /**
-	   * Calculate the size of a matrix or scalar
+	   * Calculate the size of a matrix or scalar.
 	   *
-	   *     size(x)
+	   * Syntax:
 	   *
-	   * @param {Boolean | Number | Complex | Unit | String | Array | Matrix} x
-	   * @return {Array | Matrix} res
+	   *     math.size(x)
+	   *
+	   * Examples:
+	   *
+	   *     var math = mathjs();
+	   *
+	   *     math.size(2.3);                  // returns []
+	   *     math.size('hello world');        // returns [11]
+	   *
+	   *     var A = [[1, 2, 3], [4, 5, 6]];
+	   *     math.size(A);                    // returns [2, 3]
+	   *     math.size(math.range(1,6));      // returns [5]
+	   *
+	   * See also:
+	   *
+	   *     resize, squeeze, subset
+	   *
+	   * @param {Boolean | Number | Complex | Unit | String | Array | Matrix} x  A matrix
+	   * @return {Array | Matrix} A vector with size of `x`.
 	   */
 	  math.size = function size (x) {
 	    if (arguments.length != 1) {
@@ -10573,12 +11546,32 @@ return /******/ (function(modules) { // webpackBootstrap
 	      isArray = Array.isArray;
 
 	  /**
-	   * Remove singleton dimensions from a matrix
+	   * Squeeze a matrix, remove outer singleton dimensions from a matrix.
 	   *
-	   *     squeeze(x)
+	   * Syntax:
 	   *
-	   * @param {Matrix | Array} x
-	   * @return {Matrix | Array} res
+	   *     math.squeeze(x)
+	   *
+	   * Examples:
+	   *
+	   *     var math = mathjs();
+	   *
+	   *     math.squeeze([3]);           // returns 3
+	   *     math.squeeze([[3]]);         // returns 3
+	   *
+	   *     var A = math.zeros(1, 3, 2); // returns [[[0, 0], [0, 0], [0, 0]]] (size 1x3x2)
+	   *     math.squeeze(A);             // returns [[0, 0], [0, 0], [0, 0]] (size 3x2)
+	   *
+	   *     // only outer dimensions will be squeezed, so the following B will be left as as
+	   *     var B = math.zeros(3, 1, 1); // returns [[[0]], [[0]], [[0]]] (size 3x1x1)
+	   *     math.squeeze(B);             // returns [[[0]], [[0]], [[0]]] (size 3x1x1)
+	   *
+	   * See also:
+	   *
+	   *     subset
+	   *
+	   * @param {Matrix | Array} x      Matrix to be squeezed
+	   * @return {Matrix | Array} Squeezed matrix
 	   */
 	  math.squeeze = function squeeze (x) {
 	    if (arguments.length != 1) {
@@ -10615,27 +11608,42 @@ return /******/ (function(modules) { // webpackBootstrap
 	      isArray = Array.isArray;
 
 	  /**
-	   * Get or set a subset of a matrix or string
+	   * Get or set a subset of a matrix or string.
 	   *
-	   * Usage:
-	   *     // retrieve subset:
-	   *     var subset = math.subset(value, index)
+	   * Syntax:
+	   *     math.subset(value, index)                                // retrieve a subset
+	   *     math.subset(value, index, replacement [, defaultValue])  // replace a subset
 	   *
-	   *     // replace subset:
-	   *     var value = math.subset(value, index, replacement [, defaultValue])
+	   * Examples:
 	   *
-	   * Where:
-	   *     {Array | Matrix | String} value  An array, matrix, or string
-	   *     {Index} index                    An index containing ranges for each
-	   *                                      dimension
-	   *     {*} replacement                  An array, matrix, or scalar
-	   *     {*} [defaultValue]        Default value, filled in on new entries when
-	   *                               the matrix is resized. If not provided,
-	   *                               new matrix elements will be left undefined.
-	   * @param args
-	   * @return res
+	   *     var math = mathjs();
+	   *
+	   *     // get a subset
+	   *     var d = [[1, 2], [3, 4]];
+	   *     math.subset(d, math.index(1, 0));        // returns 3
+	   *     math.subset(d, math.index([0, 2], 1));   // returns [[2], [4]]
+	   *
+	   *     // replace a subset
+	   *     var e = [];
+	   *     var f = math.subset(e, math.index(0, [0, 2]), [5, 6]);  // f = [[5, 6]]
+	   *     var g = math.subset(f, math.index(1, 1), 7, 0);         // g = [[5, 6], [0, 7]]
+	   *
+	   * See also:
+	   *
+	   *     size, resize, squeeze, index
+	   *
+	   * @param {Array | Matrix | String} matrix  An array, matrix, or string
+	   * @param {Index} index                     An index containing ranges for each
+	   *                                          dimension
+	   * @param {*} [replacement]                 An array, matrix, or scalar.
+	   *                                          If provided, the subset is replaced with replacement.
+	   *                                          If not provided, the subset is returned
+	   * @param {*} [defaultValue=undefined]      Default value, filled in on new entries when
+	   *                                          the matrix is resized. If not provided,
+	   *                                          new matrix elements will be left undefined.
+	   * @return {Array | Matrix | String} Either the retrieved subset or the updated matrix.
 	   */
-	  math.subset = function subset (args) {
+	  math.subset = function subset (matrix, index, replacement, defaultValue) {
 	    switch (arguments.length) {
 	      case 2: // get subset
 	        return _getSubset(arguments[0], arguments[1]);
@@ -10804,18 +11812,31 @@ return /******/ (function(modules) { // webpackBootstrap
 	  var util = __webpack_require__(123),
 
 	      Matrix = __webpack_require__(8),
-	      collection = __webpack_require__(11),
 
 	      object = util.object,
 	      string = util.string;
 
 	  /**
-	   * Create the transpose of a matrix
+	   * Transpose a matrix. All values of the matrix are reflected over its
+	   * main diagonal. Only two dimensional matrices are supported.
 	   *
-	   *     transpose(x)
+	   * Syntax:
 	   *
-	   * @param {Array | Matrix} x
-	   * @return {Array | Matrix} transpose
+	   *     math.transpose(x)
+	   *
+	   * Examples:
+	   *
+	   *     var math = mathjs();
+	   *
+	   *     var A = [[1, 2, 3], [4, 5, 6]];
+	   *     math.transpose(A);               // returns [[1, 4], [2, 5], [3, 6]]
+	   *
+	   * See also:
+	   *
+	   *     diag, inv, subset, squeeze
+	   *
+	   * @param {Array | Matrix} x  Matrix to be transposed
+	   * @return {Array | Matrix}   The transposed matrix
 	   */
 	  math.transpose = function transpose (x) {
 	    if (arguments.length != 1) {
@@ -10881,15 +11902,30 @@ return /******/ (function(modules) { // webpackBootstrap
 	      isArray = Array.isArray;
 
 	  /**
-	   * create a matrix filled with zeros
+	   * Create a matrix filled with zeros. The created matrix can have one or
+	   * multiple dimensions.
 	   *
-	   *     zeros(m)
-	   *     zeros(m, n)
-	   *     zeros([m, n])
-	   *     zeros([m, n, p, ...])
+	   * Syntax:
 	   *
-	   * @param {...Number | Array} size
-	   * @return {Array | Matrix | Number} matrix
+	   *    math.zeros(m)
+	   *    math.zeros(m, n)
+	   *    math.zeros([m, n])
+	   *    math.zeros([m, n, p, ...])
+	   *
+	   * Examples:
+	   *
+	   *    math.zeros(3);                  // returns [0, 0, 0]
+	   *    math.zeros(3, 2);               // returns [[0, 0], [0, 0], [0, 0]]
+	   *
+	   *    var A = [[1, 2, 3], [4, 5, 6]];
+	   *    math.zeros(math.size(A));       // returns [[0, 0, 0], [0, 0, 0]]
+	   *
+	   * See also:
+	   *
+	   *    ones, eye, size, range
+	   *
+	   * @param {...Number | Array} size    The size of each dimension of the matrix
+	   * @return {Array | Matrix | Number}  A matrix filled with zeros
 	   */
 	  math.zeros = function zeros (size) {
 	    var args = collection.argsToArray(arguments);
@@ -10943,14 +11979,26 @@ return /******/ (function(modules) { // webpackBootstrap
 	  /**
 	   * Compute the factorial of a value
 	   *
-	   *     n!
-	   *     factorial(n)
-	   *
 	   * Factorial only supports an integer value as argument.
 	   * For matrices, the function is evaluated element wise.
 	   *
-	   * @Param {Number | BigNumber | Array | Matrix} n
-	   * @return {Number | BigNumber | Array | Matrix} res
+	   * Syntax:
+	   *
+	   *    math.factorial(n)
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    math.factorial(5);    // returns 120
+	   *    math.factorial(3);    // returns 6
+	   *
+	   * See also:
+	   *
+	   *    combinations, permutations
+	   *
+	   * @param {Number | BigNumber | Array | Matrix} n   An integer number
+	   * @return {Number | BigNumber | Array | Matrix}    The factorial of `n`
 	   */
 	  math.factorial = function factorial (n) {
 	    var value, res;
@@ -11032,12 +12080,28 @@ return /******/ (function(modules) { // webpackBootstrap
 	  // TODO: implement BigNumber support for random
 
 	  /**
-	   * Return a random number between 0 and 1
+	   * Return a random number between `min` and `max` using a uniform distribution.
 	   *
-	   *     random()
+	   * Syntax:
 	   *
-	   * @return {Number} res
+	   *     math.random()          // generate a random number between 0 and 1
+	   *     math.random(max)       // generate a random number between 0 and max
+	   *     math.random(min, max)  // generate a random number between min and max
+	   *
+	   * Examples:
+	   *
+	   *     var math = mathjs();
+	   *
+	   *     math.random();       // returns a random number between 0 and 1
+	   *     math.random(100);    // returns a random number between 0 and 100
+	   *     math.random(30, 40); // returns a random number between 30 and 40
+	   *
+	   * @param {Number} [min]  Minimum boundary for the random value
+	   * @param {Number} [max]  Maximum boundary for the random value
+	   * @return {Number} A random number
 	   */
+
+	  // TODO: improve structure of random.js, split it in one file per function
 
 	  // Each distribution is a function that takes no argument and when called returns
 	  // a number between 0 and 1.
@@ -11219,17 +12283,31 @@ return /******/ (function(modules) { // webpackBootstrap
 	      isInteger = util.number.isInteger;
 
 	  /**
-	   * Compute the number of permutations of n items taken k at a time
+	   * Compute the number of ways of obtaining an ordered subset of `k` elements
+	   * from a set of `n` elements.
 	   *
-	   *     permutations(n)
-	   *     permutations(n, k)
+	   * Permutations only takes integer arguments.
+	   * The following condition must be enforced: k <= n.
 	   *
-	   * permutations only takes integer arguments
-	   * the following condition must be enforced: k <= n
+	   * Syntax:
 	   *
-	   * @Param {Number | BigNumber} n
-	   * @Param {Number | BigNumber} k
-	   * @return {Number | BigNumber} permutations
+	   *     math.permutations(n)
+	   *     math.permutations(n, k)
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    math.permutations(5);     // 120
+	   *    math.permutations(5, 3);  // 60
+	   *
+	   * See also:
+	   *
+	   *    combinations, factorial
+	   *
+	   * @param {Number | BigNumber} n  The number of objects in total
+	   * @param {Number | BigNumber} k  The number of objects in the subset
+	   * @return {Number | BigNumber}   The number of permutations
 	   */
 	  math.permutations = function permutations (n, k) {
 	    var result, i;
@@ -11319,16 +12397,29 @@ return /******/ (function(modules) { // webpackBootstrap
 	      isInteger = util.number.isInteger;
 
 	  /**
-	   * Compute the number of combinations of n items taken k at a time
+	   * Compute the number of ways of picking `k` unordered outcomes from `n`
+	   * possibilities.
 	   *
-	   *     combinations(n, k)
+	   * Combinations only takes integer arguments.
+	   * The following condition must be enforced: k <= n.
 	   *
-	   * combinations only takes integer arguments
-	   * the following condition must be enforced: k <= n
+	   * Syntax:
 	   *
-	   * @Param {Number | BigNumber} n
-	   * @Param {Number | BigNumber} k
-	   * @return {Number | BigNumber} combinations
+	   *     math.combinations(n, k)
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    math.combinations(7, 5); // returns 21
+	   *
+	   * See also:
+	   *
+	   *    permutations, factorial
+	   *
+	   * @param {Number | BigNumber} n    Total number of objects in the set
+	   * @param {Number | BigNumber} k    Number of objects in the subset
+	   * @return {Number | BigNumber}     Number of possible combinations.
 	   */
 	  math.combinations = function combinations (n, k) {
 	    var max, result, i,ii;
@@ -11400,17 +12491,37 @@ return /******/ (function(modules) { // webpackBootstrap
 	      isCollection = collection.isCollection;
 
 	  /**
-	   * Compute the minimum value of a list of values.
-	   * In case of a multi dimensional array, the minimum of the flattened array
-	   * will be calculated. When dim is provided, the maximum over the selected
-	   * dimension will be calculated.
+	   * Compute the maximum value of a matrix or a  list of values.
+	   * In case of a multi dimensional array, the maximum of the flattened array
+	   * will be calculated. When `dim` is provided, the maximum over the selected
+	   * dimension will be calculated. Parameter `dim` is zero-based.
 	   *
-	   *     min(a, b, c, ...)
-	   *     min(A)
-	   *     min(A, dim)
+	   * Syntax:
 	   *
-	   * @param {... *} args  A single matrix or multiple scalar values
-	   * @return {*} res
+	   *     math.min(a, b, c, ...)
+	   *     math.min(A)
+	   *     math.min(A, dim)
+	   *
+	   * Examples:
+	   *
+	   *     var math = mathjs();
+	   *
+	   *     math.min(2, 1, 4, 3);                  // returns 1
+	   *     math.min([2, 1, 4, 3]);                // returns 1
+	   *
+	   *     // maximum over a specified dimension (zero-based)
+	   *     math.min([[2, 5], [4, 3], [1, 7]], 0); // returns [1, 3]
+	   *     math.min([[2, 5], [4, 3], [1, 7]], 1); // returns [2, 3, 1]
+	   *
+	   *     math.max(2.7, 7.1, -4.5, 2.0, 4.1);    // returns 7.1
+	   *     math.min(2.7, 7.1, -4.5, 2.0, 4.1);    // returns -4.5
+	   *
+	   * See also:
+	   *
+	   *    mean, median, max, prod, std, sum, var
+	   *
+	   * @param {... *} args  A single matrix or or multiple scalar values
+	   * @return {*} The minimum value
 	   */
 	  math.min = function min(args) {
 	    if (arguments.length == 0) {
@@ -11475,17 +12586,37 @@ return /******/ (function(modules) { // webpackBootstrap
 	      isCollection = collection.isCollection;
 
 	  /**
-	   * Compute the maximum value of a list of values
+	   * Compute the maximum value of a matrix or a  list with values.
 	   * In case of a multi dimensional array, the maximum of the flattened array
-	   * will be calculated. When dim is provided, the maximum over the selected
-	   * dimension will be calculated.
+	   * will be calculated. When `dim` is provided, the maximum over the selected
+	   * dimension will be calculated. Parameter `dim` is zero-based.
 	   *
-	   *     max(a, b, c, ...)
-	   *     max(A)
-	   *     max(A, dim)
+	   * Syntax:
+	   *
+	   *     math.max(a, b, c, ...)
+	   *     math.max(A)
+	   *     math.max(A, dim)
+	   *
+	   * Examples:
+	   *
+	   *     var math = mathjs();
+	   *
+	   *     math.max(2, 1, 4, 3);                  // returns 4
+	   *     math.max([2, 1, 4, 3]);                // returns 4
+	   *
+	   *     // maximum over a specified dimension (zero-based)
+	   *     math.max([[2, 5], [4, 3], [1, 7]], 0); // returns [4, 7]
+	   *     math.max([[2, 5], [4, 3]], [1, 7], 1); // returns [5, 4, 7]
+	   *
+	   *     math.max(2.7, 7.1, -4.5, 2.0, 4.1);    // returns 7.1
+	   *     math.min(2.7, 7.1, -4.5, 2.0, 4.1);    // returns -4.5
+	   *
+	   * See also:
+	   *
+	   *    mean, median, min, prod, std, sum, var
 	   *
 	   * @param {... *} args  A single matrix or or multiple scalar values
-	   * @return {*} res
+	   * @return {*} The maximum value
 	   */
 	  math.max = function max(args) {
 	    if (arguments.length == 0) {
@@ -11552,17 +12683,33 @@ return /******/ (function(modules) { // webpackBootstrap
 	      size = __webpack_require__(153).size;
 
 	  /**
-	   * Compute the mean value of a list of values
+	   * Compute the mean value of matrix or a list with values.
 	   * In case of a multi dimensional array, the mean of the flattened array
-	   * will be calculated. When dim is provided, the maximum over the selected
-	   * dimension will be calculated.
+	   * will be calculated. When `dim` is provided, the maximum over the selected
+	   * dimension will be calculated. Parameter `dim` is zero-based.
 	   *
-	   *     mean(a, b, c, ...)
-	   *     mean(A)
-	   *     mean(A, dim)
+	   * Syntax:
+	   *
+	   *     mean.mean(a, b, c, ...)
+	   *     mean.mean(A)
+	   *     mean.mean(A, dim)
+	   *
+	   * Examples:
+	   *
+	   *     var math = mathjs();
+	   *
+	   *     math.mean(2, 1, 4, 3);                     // returns 2.5
+	   *     math.mean([1, 2.7, 3.2, 4]);               // returns 2.725
+	   *
+	   *     math.mean([[2, 5], [6, 3], [1, 7]], 0);    // returns [3, 5]
+	   *     math.mean([[2, 5], [6, 3], [1, 7]], 1);    // returns [3.5, 4.5, 4]
+	   *
+	   * See also:
+	   *
+	   *     median, min, max, sum, prod, std, var
 	   *
 	   * @param {... *} args  A single matrix or or multiple scalar values
-	   * @return {*} res
+	   * @return {*} The mean of all values
 	   */
 	  math.mean = function mean(args) {
 	    if (arguments.length == 0) {
@@ -11642,19 +12789,32 @@ return /******/ (function(modules) { // webpackBootstrap
 	      flatten = __webpack_require__(153).flatten;
 
 	  /**
-	   * Compute the median of a list of values. The values are sorted and the
-	   * middle value is returned. In case of an even number of values,
-	   * the average of the two middle values is returned.
+	   * Compute the median of a matrix or a list with values. The values are
+	   * sorted and the middle value is returned. In case of an even number of
+	   * values, the average of the two middle values is returned.
 	   * Supported types of values are: Number, BigNumber, Unit
 	   *
 	   * In case of a (multi dimensional) array or matrix, the median of all
 	   * elements will be calculated.
 	   *
-	   *     median(a, b, c, ...)
-	   *     median(A)
+	   * Syntax:
+	   *
+	   *     mean.median(a, b, c, ...)
+	   *     mean.median(A)
+	   *
+	   * Examples:
+	   *
+	   *     var math = mathjs();
+	   *
+	   *     math.median(5, 2, 7);        // returns 5
+	   *     math.median([3, -1, 5, 7]);  // returns 4
+	   *
+	   * See also:
+	   *
+	   *     mean, min, max, sum, prod, std, var
 	   *
 	   * @param {... *} args  A single matrix or or multiple scalar values
-	   * @return {*} res
+	   * @return {*} The median
 	   */
 	  math.median = function median(args) {
 	    if (arguments.length == 0) {
@@ -11738,15 +12898,31 @@ return /******/ (function(modules) { // webpackBootstrap
 	      isCollection = collection.isCollection;
 
 	  /**
-	   * Compute the product of a list of values
-	   * In case of a (multi dimensional) array or matrix, the product of all
+	   * Compute the product of a matrix or a list with values.
+	   * In case of a (multi dimensional) array or matrix, the sum of all
 	   * elements will be calculated.
 	   *
-	   *     prod(a, b, c, ...)
-	   *     prod(A)
+	   * Syntax:
+	   *
+	   *     math.prod(a, b, c, ...)
+	   *     math.prod(A)
+	   *
+	   * Examples:
+	   *
+	   *     var math = mathjs();
+	   *
+	   *     math.multiply(2, 3);           // returns 6
+	   *     math.prod(2, 3);               // returns 6
+	   *     math.prod(2, 3, 4);            // returns 24
+	   *     math.prod([2, 3, 4]);          // returns 24
+	   *     math.prod([[2, 5], [4, 3]]);   // returns 120
+	   *
+	   * See also:
+	   *
+	   *    mean, median, min, max, sum, std, var
 	   *
 	   * @param {... *} args  A single matrix or or multiple scalar values
-	   * @return {*} res
+	   * @return {*} The product of all values
 	   */
 	  math.prod = function prod(args) {
 	    if (arguments.length == 0) {
@@ -11801,25 +12977,49 @@ return /******/ (function(modules) { // webpackBootstrap
 /***/ function(module, exports, __webpack_require__) {
 
 	module.exports = function (math) {
+
+
 	  /**
-	   * Compute the standard deviation of a list of values, defined as the
-	   * square root of the variance: std(A) = sqrt(var(A)).
+	   * Compute the standard deviation of a matrix or a  list with values.
+	   * The standard deviations is defined as the square root of the variance:
+	   * `std(A) = sqrt(var(A))`.
 	   * In case of a (multi dimensional) array or matrix, the standard deviation
 	   * over all elements will be calculated.
 	   *
-	   *     std(a, b, c, ...)
-	   *     std(A)
-	   *     std(A, normalization)
+	   * Optionally, the type of normalization can be specified as second
+	   * parameter. The parameter `normalization` can be one of the following values:
 	   *
-	   * Where `normalization` is a string having one of the following values:
+	   * - 'unbiased' (default) The sum of squared errors is divided by (n - 1)
+	   * - 'uncorrected'        The sum of squared errors is divided by n
+	   * - 'biased'             The sum of squared errors is divided by (n + 1)
 	   *
-	   * @param {Array | Matrix} array                 A single matrix or or multiple scalar values
+	   * Syntax:
+	   *
+	   *     math.std(a, b, c, ...)
+	   *     math.std(A)
+	   *     math.std(A, normalization)
+	   *
+	   * Examples:
+	   *
+	   *     var math = mathjs();
+	   *
+	   *     math.std(2, 4, 6);                     // returns 2
+	   *     math.std([2, 4, 6, 8]);                // returns 2.581988897471611
+	   *     math.std([2, 4, 6, 8], 'uncorrected'); // returns 2.23606797749979
+	   *     math.std([2, 4, 6, 8], 'biased');      // returns 2
+	   *
+	   *     math.std([[1, 2, 3], [4, 5, 6]]);      // returns 1.8708286933869707
+	   *
+	   * See also:
+	   *
+	   *    mean, median, max, min, prod, sum, var
+	   *
+	   * @param {Array | Matrix} array
+	   *                        A single matrix or or multiple scalar values
 	   * @param {String} [normalization='unbiased']
-	   *                        Determines how to normalize the standard deviation:
-	   *                        - 'unbiased' (default) The sum of squared errors is divided by (n - 1)
-	   *                        - 'uncorrected'        The sum of squared errors is divided by n
-	   *                        - 'biased'             The sum of squared errors is divided by (n + 1)
-	   * @return {*} res
+	   *                        Determines how to normalize the variance.
+	   *                        Choose 'unbiased' (default), 'uncorrected', or 'biased'.
+	   * @return {*} The standard deviation
 	   */
 	  math.std = function std(array, normalization) {
 	    if (arguments.length == 0) {
@@ -11843,15 +13043,29 @@ return /******/ (function(modules) { // webpackBootstrap
 	      isCollection = collection.isCollection;
 
 	  /**
-	   * Compute the sum of a list of values
+	   * Compute the sum of a matrix or a list with values.
 	   * In case of a (multi dimensional) array or matrix, the sum of all
 	   * elements will be calculated.
 	   *
-	   *     sum(a, b, c, ...)
-	   *     sum(A)
+	   * Syntax:
+	   *
+	   *     math.sum(a, b, c, ...)
+	   *     math.sum(A)
+	   *
+	   * Examples:
+	   *
+	   *     var math = mathjs();
+	   *
+	   *     math.sum(2, 1, 4, 3);               // returns 10
+	   *     math.sum([2, 1, 4, 3]);             // returns 10
+	   *     math.sum([[2, 5], [4, 3], [1, 7]]); // returns 22
+	   *
+	   * See also:
+	   *
+	   *    mean, median, min, max, prod, std, var
 	   *
 	   * @param {... *} args  A single matrix or or multiple scalar values
-	   * @return {*} res
+	   * @return {*} The sum of all values
 	   */
 	  math.sum = function sum(args) {
 	    if (arguments.length == 0) {
@@ -11916,23 +13130,48 @@ return /******/ (function(modules) { // webpackBootstrap
 	      DEFAULT_NORMALIZATION = 'unbiased';
 
 	  /**
-	   * Compute the variance of a list of values
+	   * Compute the variance of a matrix or a  list with values.
 	   * In case of a (multi dimensional) array or matrix, the variance over all
 	   * elements will be calculated.
 	   *
-	   *     var(a, b, c, ...)
-	   *     var(A)
-	   *     var(A, normalization)
+	   * Optionally, the type of normalization can be specified as second
+	   * parameter. The parameter `normalization` can be one of the following values:
 	   *
-	   * Where `normalization` is a string having one of the following values:
+	   * - 'unbiased' (default) The sum of squared errors is divided by (n - 1)
+	   * - 'uncorrected'        The sum of squared errors is divided by n
+	   * - 'biased'             The sum of squared errors is divided by (n + 1)
+
+	   * Note that older browser may not like the variable name `var`. In that
+	   * case, the function can be called as `math['var'](...)` instead of
+	   * `math.var(...)`.
 	   *
-	   * @param {Array | Matrix} array                 A single matrix or or multiple scalar values
+	   * Syntax:
+	   *
+	   *     math.var(a, b, c, ...)
+	   *     math.var(A)
+	   *     math.var(A, normalization)
+	   *
+	   * Examples:
+	   *
+	   *     var math = mathjs();
+	   *
+	   *     math.var(2, 4, 6);                     // returns 4
+	   *     math.var([2, 4, 6, 8]);                // returns 6.666666666666667
+	   *     math.var([2, 4, 6, 8], 'uncorrected'); // returns 5
+	   *     math.var([2, 4, 6, 8], 'biased');      // returns 4
+	   *
+	   *     math.var([[1, 2, 3], [4, 5, 6]]);      // returns 3.5
+	   *
+	   * See also:
+	   *
+	   *    mean, median, max, min, prod, std, sum
+	   *
+	   * @param {Array | Matrix} array
+	   *                        A single matrix or or multiple scalar values
 	   * @param {String} [normalization='unbiased']
-	   *                        Determines how to normalize the variance:
-	   *                        - 'unbiased' (default) The sum of squared errors is divided by (n - 1)
-	   *                        - 'uncorrected'        The sum of squared errors is divided by n
-	   *                        - 'biased'             The sum of squared errors is divided by (n + 1)
-	   * @return {*} res
+	   *                        Determines how to normalize the variance.
+	   *                        Choose 'unbiased' (default), 'uncorrected', or 'biased'.
+	   * @return {*} The variance
 	   */
 	  math['var'] = function variance(array, normalization) {
 	    if (arguments.length == 0) {
@@ -12037,16 +13276,29 @@ return /******/ (function(modules) { // webpackBootstrap
 	      isCollection = collection.isCollection;
 
 	  /**
-	   * Calculate the inverse cosine of a value
-	   *
-	   *     acos(x)
+	   * Calculate the inverse cosine of a value.
 	   *
 	   * For matrices, the function is evaluated element wise.
 	   *
-	   * @param {Number | Boolean | Complex | Array | Matrix} x
-	   * @return {Number | Complex | Array | Matrix} res
+	   * Syntax:
 	   *
-	   * @see http://mathworld.wolfram.com/InverseCosine.html
+	   *    math.acos(x)
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    math.acos(0.5);           // returns Number 1.0471975511965979
+	   *    math.acos(math.cos(1.5)); // returns Number 1.5
+	   *
+	   *    math.acos(2);             // returns Complex 0 + 1.3169578969248166 i
+	   *
+	   * See also:
+	   *
+	   *    cos, atan, asin
+	   *
+	   * @param {Number | Boolean | Complex | Array | Matrix} x  Function input
+	   * @return {Number | Complex | Array | Matrix} The arc cosine of x
 	   */
 	  math.acos = function acos(x) {
 	    if (arguments.length != 1) {
@@ -12118,16 +13370,29 @@ return /******/ (function(modules) { // webpackBootstrap
 	      isCollection = collection.isCollection;
 
 	  /**
-	   * Calculate the inverse sine of a value
-	   *
-	   *     asin(x)
+	   * Calculate the inverse sine of a value.
 	   *
 	   * For matrices, the function is evaluated element wise.
 	   *
-	   * @param {Number | Boolean | Complex | Array | Matrix} x
-	   * @return {Number | Complex | Array | Matrix} res
+	   * Syntax:
 	   *
-	   * @see http://mathworld.wolfram.com/InverseSine.html
+	   *    math.asin(x)
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    math.asin(0.5);           // returns Number 0.5235987755982989
+	   *    math.asin(math.sin(1.5)); // returns Number ~1.5
+	   *
+	   *    math.asin(2);             // returns Complex 1.5707963267948966 -1.3169578969248166 i
+	   *
+	   * See also:
+	   *
+	   *    sin, atan, acos
+	   *
+	   * @param {Number | Boolean | Complex | Array | Matrix} x   Function input
+	   * @return {Number | Complex | Array | Matrix} The arc sine of x
 	   */
 	  math.asin = function asin(x) {
 	    if (arguments.length != 1) {
@@ -12197,16 +13462,29 @@ return /******/ (function(modules) { // webpackBootstrap
 	      isCollection = collection.isCollection;
 
 	  /**
-	   * Calculate the inverse tangent of a value
-	   *
-	   *     atan(x)
+	   * Calculate the inverse tangent of a value.
 	   *
 	   * For matrices, the function is evaluated element wise.
 	   *
-	   * @param {Number | Boolean | Complex | Array | Matrix} x
-	   * @return {Number | Complex | Array | Matrix} res
+	   * Syntax:
 	   *
-	   * @see http://mathworld.wolfram.com/InverseTangent.html
+	   *    math.atan(x)
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    math.atan(0.5);           // returns Number 0.4636476090008061
+	   *    math.atan(math.tan(1.5)); // returns Number 1.5
+	   *
+	   *    math.atan(2);             // returns Complex 1.5707963267948966 -1.3169578969248166 i
+	   *
+	   * See also:
+	   *
+	   *    tan, asin, acos
+	   *
+	   * @param {Number | Boolean | Complex | Array | Matrix} x   Function input
+	   * @return {Number | Complex | Array | Matrix} The arc tangent of x
 	   */
 	  math.atan = function atan(x) {
 	    if (arguments.length != 1) {
@@ -12271,17 +13549,35 @@ return /******/ (function(modules) { // webpackBootstrap
 	      isCollection = collection.isCollection;
 
 	  /**
-	   * Computes the principal value of the arc tangent of y/x in radians
-	   *
-	   *     atan2(y, x)
+	   * Calculate the inverse tangent function with two arguments, y/x.
+	   * By providing two arguments, the right quadrant of the computed angle can be
+	   * determined.
 	   *
 	   * For matrices, the function is evaluated element wise.
 	   *
-	   * @param {Number | Boolean | Complex | Array | Matrix} y
-	   * @param {Number | Boolean | Complex | Array | Matrix} x
-	   * @return {Number | Complex | Array | Matrix} res
+	   * Syntax:
 	   *
-	   * @see http://mathworld.wolfram.com/InverseTangent.html
+	   *    math.atan2(y, x)
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    math.atan2(2, 2) / math.pi;       // returns number 0.25
+	   *
+	   *    var angle = math.unit(60, 'deg'); // returns Unit 60 deg
+	   *    var x = math.cos(angle);
+	   *    var y = math.sin(angle);
+	   *
+	   *    math.atan(2);             // returns Complex 1.5707963267948966 -1.3169578969248166 i
+	   *
+	   * See also:
+	   *
+	   *    tan, atan, sin, cos
+	   *
+	   * @param {Number | Boolean | Complex | Array | Matrix} y  Second dimension
+	   * @param {Number | Boolean | Complex | Array | Matrix} x  First dimension
+	   * @return {Number | Complex | Array | Matrix} Four-quadrant inverse tangent
 	   */
 	  math.atan2 = function atan2(y, x) {
 	    if (arguments.length != 2) {
@@ -12339,16 +13635,32 @@ return /******/ (function(modules) { // webpackBootstrap
 	      isCollection = collection.isCollection;
 
 	  /**
-	   * Calculate the cosine of a value
-	   *
-	   *     cos(x)
+	   * Calculate the cosine of a value.
 	   *
 	   * For matrices, the function is evaluated element wise.
 	   *
-	   * @param {Number | Boolean | Complex | Unit | Array | Matrix} x
-	   * @return {Number | Complex | Array | Matrix} res
+	   * Syntax:
 	   *
-	   * @see http://mathworld.wolfram.com/Cosine.html
+	   *    math.cos(x)
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    math.cos(2);                      // returns Number -0.4161468365471422
+	   *    math.cos(math.pi / 4);            // returns Number  0.7071067811865475
+	   *    math.cos(math.unit(180, 'deg'));  // returns Number -1
+	   *    math.cos(math.unit(60, 'deg'));   // returns Number  0.5
+	   *
+	   *    var angle = 0.2;
+	   *    math.pow(math.sin(angle), 2) + math.pow(math.cos(angle), 2); // returns Number ~1
+	   *
+	   * See also:
+	   *
+	   *    cos, tan
+	   *
+	   * @param {Number | Boolean | Complex | Unit | Array | Matrix} x  Function input
+	   * @return {Number | Complex | Array | Matrix} Cosine of x
 	   */
 	  math.cos = function cos(x) {
 	    if (arguments.length != 1) {
@@ -12412,16 +13724,27 @@ return /******/ (function(modules) { // webpackBootstrap
 	      isCollection = collection.isCollection;
 
 	  /**
-	   * Calculate the hyperbolic cosine of a value
-	   *
-	   *     cosh(x)
+	   * Calculate the hyperbolic cosine of a value,
+	   * defined as `cosh(x) = 1/2 * (exp(x) + exp(-x))`.
 	   *
 	   * For matrices, the function is evaluated element wise.
 	   *
-	   * @param {Number | Boolean | Complex | Unit | Array | Matrix} x
-	   * @return {Number | Complex | Array | Matrix} res
+	   * Syntax:
 	   *
-	   * @see http://mathworld.wolfram.com/HyperbolicCosine.html
+	   *    math.cosh(x)
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    math.cosh(0.5);       // returns Number 1.1276259652063807
+	   *
+	   * See also:
+	   *
+	   *    sinh, tanh
+	   *
+	   * @param {Number | Boolean | Complex | Unit | Array | Matrix} x  Function input
+	   * @return {Number | Complex | Array | Matrix} Hyperbolic cosine of x
 	   */
 	  math.cosh = function cosh(x) {
 	    if (arguments.length != 1) {
@@ -12483,14 +13806,27 @@ return /******/ (function(modules) { // webpackBootstrap
 	      isCollection = collection.isCollection;
 
 	  /**
-	   * Calculate the cotangent of a value. cot(x) is defined as 1 / tan(x)
-	   *
-	   *     cot(x)
+	   * Calculate the cotangent of a value. `cot(x)` is defined as `1 / tan(x)`.
 	   *
 	   * For matrices, the function is evaluated element wise.
 	   *
-	   * @param {Number | Boolean | Complex | Unit | Array | Matrix} x
-	   * @return {Number | Complex | Array | Matrix} res
+	   * Syntax:
+	   *
+	   *    math.cot(x)
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    math.cot(2);      // returns Number -0.45765755436028577
+	   *    1 / math.tan(2);  // returns Number -0.45765755436028577
+	   *
+	   * See also:
+	   *
+	   *    tan, sec, csc
+	   *
+	   * @param {Number | Boolean | Complex | Unit | Array | Matrix} x  Function input
+	   * @return {Number | Complex | Array | Matrix} Cotangent of x
 	   */
 	  math.cot = function cot(x) {
 	    if (arguments.length != 1) {
@@ -12556,16 +13892,29 @@ return /******/ (function(modules) { // webpackBootstrap
 	      isCollection = collection.isCollection;
 
 	  /**
-	   * Calculate the hyperbolic cotangent of a value
-	   *
-	   *     coth(x)
+	   * Calculate the hyperbolic cotangent of a value,
+	   * defined as `coth(x) = 1 / tanh(x)`.
 	   *
 	   * For matrices, the function is evaluated element wise.
 	   *
-	   * @param {Number | Boolean | Complex | Unit | Array | Matrix} x
-	   * @return {Number | Complex | Array | Matrix} res
+	   * Syntax:
 	   *
-	   * @see http://mathworld.wolfram.com/HyperbolicCotangent.html
+	   *    math.coth(x)
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    // coth(x) = 1 / tanh(x)
+	   *    math.coth(2);         // returns 1.0373147207275482
+	   *    1 / math.tanh(2);     // returns 1.0373147207275482
+	   *
+	   * See also:
+	   *
+	   *    sinh, tanh, cosh
+	   *
+	   * @param {Number | Boolean | Complex | Unit | Array | Matrix} x  Function input
+	   * @return {Number | Complex | Array | Matrix} Hyperbolic cotangent of x
 	   */
 	  math.coth = function coth(x) {
 	    if (arguments.length != 1) {
@@ -12633,14 +13982,27 @@ return /******/ (function(modules) { // webpackBootstrap
 	      isCollection = collection.isCollection;
 
 	  /**
-	   * Calculate the cosecant of a value, csc(x) = 1/sin(x)
-	   *
-	   *     csc(x)
+	   * Calculate the cosecant of a value, defined as `csc(x) = 1/sin(x)`.
 	   *
 	   * For matrices, the function is evaluated element wise.
 	   *
-	   * @param {Number | Boolean | Complex | Unit | Array | Matrix} x
-	   * @return {Number | Complex | Array | Matrix} res
+	   * Syntax:
+	   *
+	   *    math.csc(x)
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    math.csc(2);      // returns Number 1.099750170294617
+	   *    1 / math.sin(2);  // returns Number 1.099750170294617
+	   *
+	   * See also:
+	   *
+	   *    sin, sec, cot
+	   *
+	   * @param {Number | Boolean | Complex | Unit | Array | Matrix} x  Function input
+	   * @return {Number | Complex | Array | Matrix} Cosecant of x
 	   */
 	  math.csc = function csc(x) {
 	    if (arguments.length != 1) {
@@ -12708,16 +14070,29 @@ return /******/ (function(modules) { // webpackBootstrap
 	      isCollection = collection.isCollection;
 
 	  /**
-	   * Calculate the hyperbolic cosecant of a value
-	   *
-	   *     csch(x)
+	   * Calculate the hyperbolic cosecant of a value,
+	   * defined as `csch(x) = 1 / sinh(x)`.
 	   *
 	   * For matrices, the function is evaluated element wise.
 	   *
-	   * @param {Number | Boolean | Complex | Unit | Array | Matrix} x
-	   * @return {Number | Complex | Array | Matrix} res
+	   * Syntax:
 	   *
-	   * @see http://mathworld.wolfram.com/HyperbolicCosecant.html
+	   *    math.csch(x)
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    // csch(x) = 1/ sinh(x)
+	   *    math.csch(0.5);       // returns 1.9190347513349437
+	   *    1 / math.sinh(0.5);   // returns 1.9190347513349437
+	   *
+	   * See also:
+	   *
+	   *    sinh, sech, coth
+	   *
+	   * @param {Number | Boolean | Complex | Unit | Array | Matrix} x  Function input
+	   * @return {Number | Complex | Array | Matrix} Hyperbolic cosecant of x
 	   */
 	  math.csch = function csch(x) {
 	    if (arguments.length != 1) {
@@ -12785,14 +14160,27 @@ return /******/ (function(modules) { // webpackBootstrap
 	      isCollection = collection.isCollection;
 
 	  /**
-	   * Calculate the secant of a value, sec(x) = 1/cos(x)
-	   *
-	   *     sec(x)
+	   * Calculate the secant of a value, defined as `sec(x) = 1/cos(x)`.
 	   *
 	   * For matrices, the function is evaluated element wise.
 	   *
-	   * @param {Number | Boolean | Complex | Unit | Array | Matrix} x
-	   * @return {Number | Complex | Array | Matrix} res
+	   * Syntax:
+	   *
+	   *    math.sec(x)
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    math.sec(2);      // returns Number -2.4029979617223822
+	   *    1 / math.cos(2);  // returns Number -2.4029979617223822
+	   *
+	   * See also:
+	   *
+	   *    cos, csc, cot
+	   *
+	   * @param {Number | Boolean | Complex | Unit | Array | Matrix} x  Function input
+	   * @return {Number | Complex | Array | Matrix} Secant of x
 	   */
 	  math.sec = function sec(x) {
 	    if (arguments.length != 1) {
@@ -12859,16 +14247,29 @@ return /******/ (function(modules) { // webpackBootstrap
 	      isCollection = collection.isCollection;
 
 	  /**
-	   * Calculate the hyperbolic secant of a value; sech(x)=1/cosh(x)
-	   *
-	   *     sech(x)
+	   * Calculate the hyperbolic secant of a value,
+	   * defined as `sech(x) = 1 / cosh(x)`.
 	   *
 	   * For matrices, the function is evaluated element wise.
 	   *
-	   * @param {Number | Boolean | Complex | Unit | Array | Matrix} x
-	   * @return {Number | Complex | Array | Matrix} res
+	   * Syntax:
 	   *
-	   * @see http://mathworld.wolfram.com/HyperbolicSecant.html
+	   *    math.sech(x)
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    // sech(x) = 1/ cosh(x)
+	   *    math.sech(0.5);       // returns 0.886818883970074
+	   *    1 / math.cosh(0.5);   // returns 1.9190347513349437
+	   *
+	   * See also:
+	   *
+	   *    cosh, csch, coth
+	   *
+	   * @param {Number | Boolean | Complex | Unit | Array | Matrix} x  Function input
+	   * @return {Number | Complex | Array | Matrix} Hyperbolic secant of x
 	   */
 	  math.sech = function sech(x) {
 	    if (arguments.length != 1) {
@@ -12932,6 +14333,34 @@ return /******/ (function(modules) { // webpackBootstrap
 	      isUnit = Unit.isUnit,
 	      isCollection = collection.isCollection;
 
+	  /**
+	   * Calculate the sine of a value.
+	   *
+	   * For matrices, the function is evaluated element wise.
+	   *
+	   * Syntax:
+	   *
+	   *    math.sin(x)
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    math.sin(2);                      // returns Number 0.9092974268256813
+	   *    math.sin(math.pi / 4);            // returns Number 0.7071067811865475
+	   *    math.sin(math.unit(90, 'deg'));   // returns Number 1
+	   *    math.sin(math.unit(30, 'deg'));   // returns Number 0.5
+	   *
+	   *    var angle = 0.2;
+	   *    math.pow(math.sin(angle), 2) + math.pow(math.cos(angle), 2); // returns Number ~1
+	   *
+	   * See also:
+	   *
+	   *    cos, tan
+	   *
+	   * @param {Number | Boolean | Complex | Unit | Array | Matrix} x  Function input
+	   * @return {Number | Complex | Array | Matrix} Sine of x
+	   */
 	  /**
 	   * Calculate the sine of a value
 	   *
@@ -13005,16 +14434,27 @@ return /******/ (function(modules) { // webpackBootstrap
 	      isCollection = collection.isCollection;
 
 	  /**
-	   * Calculate the hyperbolic sine of a value
-	   *
-	   *     sinh(x)
+	   * Calculate the hyperbolic sine of a value,
+	   * defined as `sinh(x) = 1/2 * (exp(x) - exp(-x))`.
 	   *
 	   * For matrices, the function is evaluated element wise.
 	   *
-	   * @param {Number | Boolean | Complex | Unit | Array | Matrix} x
-	   * @return {Number | Complex | Array | Matrix} res
+	   * Syntax:
 	   *
-	   * @see http://mathworld.wolfram.com/HyperbolicSine.html
+	   *    math.sinh(x)
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    math.sinh(0.5);       // returns Number 0.5210953054937474
+	   *
+	   * See also:
+	   *
+	   *    cosh, tanh
+	   *
+	   * @param {Number | Boolean | Complex | Unit | Array | Matrix} x  Function input
+	   * @return {Number | Complex | Array | Matrix} Hyperbolic sine of x
 	   */
 	  math.sinh = function sinh(x) {
 	    if (arguments.length != 1) {
@@ -13078,16 +14518,29 @@ return /******/ (function(modules) { // webpackBootstrap
 	      isCollection = collection.isCollection;
 
 	  /**
-	   * Calculate the tangent of a value
-	   *
-	   *     tan(x)
+	   * Calculate the tangent of a value. `tan(x)` is equal to `sin(x) / cos(x)`.
 	   *
 	   * For matrices, the function is evaluated element wise.
 	   *
-	   * @param {Number | Boolean | Complex | Unit | Array | Matrix} x
-	   * @return {Number | Complex | Array | Matrix} res
+	   * Syntax:
 	   *
-	   * @see http://mathworld.wolfram.com/Tangent.html
+	   *    math.tan(x)
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    math.tan(0.5);                    // returns Number 0.5463024898437905
+	   *    math.sin(0.5) / math.cos(0.5);    // returns Number 0.5463024898437905
+	   *    math.tan(math.pi / 4);            // returns Number 1
+	   *    math.tan(math.unit(45, 'deg'));   // returns Number 1
+	   *
+	   * See also:
+	   *
+	   *    atan, sin, cos
+	   *
+	   * @param {Number | Boolean | Complex | Unit | Array | Matrix} x  Function input
+	   * @return {Number | Complex | Array | Matrix} Tangent of x
 	   */
 	  math.tan = function tan(x) {
 	    if (arguments.length != 1) {
@@ -13154,16 +14607,30 @@ return /******/ (function(modules) { // webpackBootstrap
 	      isCollection = collection.isCollection;
 
 	  /**
-	   * Calculate the hyperbolic tangent of a value
-	   *
-	   *     tanh(x)
+	   * Calculate the hyperbolic tangent of a value,
+	   * defined as `tanh(x) = (exp(2 * x) - 1) / (exp(2 * x) + 1)`.
 	   *
 	   * For matrices, the function is evaluated element wise.
 	   *
-	   * @param {Number | Boolean | Complex | Unit | Array | Matrix} x
-	   * @return {Number | Complex | Array | Matrix} res
+	   * Syntax:
 	   *
-	   * @see http://mathworld.wolfram.com/HyperbolicTangent.html
+	   *    math.tanh(x)
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    // tanh(x) = sinh(x) / cosh(x) = 1 / coth(x)
+	   *    math.tanh(0.5);                   // returns 0.46211715726000974
+	   *    math.sinh(0.5) / math.cosh(0.5);  // returns 0.46211715726000974
+	   *    1 / math.coth(0.5);               // returns 0.46211715726000974
+	   *
+	   * See also:
+	   *
+	   *    sinh, cosh, coth
+	   *
+	   * @param {Number | Boolean | Complex | Unit | Array | Matrix} x  Function input
+	   * @return {Number | Complex | Array | Matrix} Hyperbolic tangent of x
 	   */
 	  math.tanh = function tanh(x) {
 	    if (arguments.length != 1) {
@@ -13229,14 +14696,28 @@ return /******/ (function(modules) { // webpackBootstrap
 	  /**
 	   * Change the unit of a value.
 	   *
-	   *     x to unit
-	   *     to(x, unit)
-	   *
 	   * For matrices, the function is evaluated element wise.
 	   *
-	   * @param {Unit | Array | Matrix} x
-	   * @param {Unit | Array | Matrix} unit
-	   * @return {Unit | Array | Matrix} res
+	   * Syntax:
+	   *
+	   *    math.to(x, unit)
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    math.to(math.unit('2 inch'), 'cm');                   // returns Unit 5.08 cm
+	   *    math.to(math.unit('2 inch'), math.unit(null, 'cm'));  // returns Unit 5.08 cm
+	   *    math.to(math.unit(16, 'bytes'), 'bits');              // returns Unit 128 bits
+	   *
+	   * See also:
+	   *
+	   *    unit
+	   *
+	   * @param {Unit | Array | Matrix} x     The unit to be converted.
+	   * @param {Unit | Array | Matrix} unit  New unit. Can be a string like "cm"
+	   *                                      or a unit without value.
+	   * @return {Unit | Array | Matrix} value with changed, fixed unit.
 	   */
 	  math.to = function to(x, unit) {
 	    if (arguments.length != 2) {
@@ -13269,12 +14750,24 @@ return /******/ (function(modules) { // webpackBootstrap
 	      object = util.object;
 
 	  /**
-	   * Clone an object
+	   * Clone an object.
 	   *
-	   *     clone(x)
+	   * Syntax:
 	   *
-	   * @param {*} x
-	   * @return {*} clone
+	   *     math.clone(x)
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    math.clone(3.5);              // returns number 3.5
+	   *    math.clone(2 - 4i);           // returns Complex 2 - 4i
+	   *    math.clone(45 deg);           // returns Unit 45 deg
+	   *    math.clone([[1, 2], [3, 4]]); // returns Array [[1, 2], [3, 4]]
+	   *    math.clone("hello world");    // returns string "hello world"
+	   *
+	   * @param {*} x   Object to be cloned
+	   * @return {*} A clone of object x
 	   */
 	  math.clone = function clone (x) {
 	    if (arguments.length != 1) {
@@ -13299,63 +14792,63 @@ return /******/ (function(modules) { // webpackBootstrap
 	   *
 	   * Syntax:
 	   *
-	   *    format(value)
-	   *    format(value, options)
-	   *    format(value, precision)
-	   *    format(value, fn)
+	   *    math.format(value)
+	   *    math.format(value, options)
+	   *    math.format(value, precision)
+	   *    math.format(value, fn)
 	   *
 	   * Where:
 	   *
-	   *    {*} value        The value to be formatted
-	   *    {Object} options An object with formatting options. Available options:
-	   *                     {String} notation
-	   *                         Number notation. Choose from:
-	   *                         'fixed'          Always use regular number notation.
-	   *                                          For example '123.40' and '14000000'
-	   *                         'exponential'    Always use exponential notation.
-	   *                                          For example '1.234e+2' and '1.4e+7'
-	   *                         'auto' (default) Regular number notation for numbers
-	   *                                          having an absolute value between
-	   *                                          `lower` and `upper` bounds, and uses
-	   *                                          exponential notation elsewhere.
-	   *                                          Lower bound is included, upper bound
-	   *                                          is excluded.
-	   *                                          For example '123.4' and '1.4e7'.
-	   *                     {Number} precision   A number between 0 and 16 to round
-	   *                                          the digits of the number.
-	   *                                          In case of notations 'exponential' and
-	   *                                          'auto', `precision` defines the total
-	   *                                          number of significant digits returned
-	   *                                          and is undefined by default.
-	   *                                          In case of notation 'fixed',
-	   *                                          `precision` defines the number of
-	   *                                          significant digits after the decimal
-	   *                                          point, and is 0 by default.
-	   *                     {Object} exponential An object containing two parameters,
-	   *                                          {Number} lower and {Number} upper,
-	   *                                          used by notation 'auto' to determine
-	   *                                          when to return exponential notation.
-	   *                                          Default values are `lower=1e-3` and
-	   *                                          `upper=1e5`.
-	   *                                          Only applicable for notation `auto`.
-	   *    {Function} fn    A custom formatting function. Can be used to override the
-	   *                     built-in notations. Function `fn` is called with `value` as
-	   *                     parameter and must return a string. Is useful for example to
-	   *                     format all values inside a matrix in a particular way.
+	   *  - `value: *`
+	   *    The value to be formatted
+	   *  - `options: Object`
+	   *    An object with formatting options. Available options:
+	   *    - `notation: String`
+	   *      Number notation. Choose from:
+	   *      - 'fixed'
+	   *        Always use regular number notation.
+	   *        For example '123.40' and '14000000'
+	   *      - 'exponential'
+	   *        Always use exponential notation.
+	   *        For example '1.234e+2' and '1.4e+7'
+	   *      - 'auto' (default)
+	   *        Regular number notation for numbers having an absolute value between
+	   *        `lower` and `upper` bounds, and uses exponential notation elsewhere.
+	   *        Lower bound is included, upper bound is excluded.
+	   *        For example '123.4' and '1.4e7'.
+	   *    - `precision: Number`
+	   *      A number between 0 and 16 to round the digits of the number. In case
+	   *      of notations 'exponential' and 'auto', `precision` defines the total
+	   *      number of significant digits returned and is undefined by default.
+	   *      In case of notation 'fixed', `precision` defines the number of
+	   *      significant digits after the decimal point, and is 0 by default.
+	   *    - `exponential: Object`
+	   *      An object containing two parameters, {Number} lower and {Number} upper,
+	   *      used by notation 'auto' to determine when to return exponential
+	   *      notation. Default values are `lower=1e-3` and `upper=1e5`. Only
+	   *      applicable for notation `auto`.
+	   * - `fn: Function`
+	   *   A custom formatting function. Can be used to override the built-in notations.
+	   *   Function `fn` is called with `value` as parameter and must return a string.
+	   *   Is useful for example to format all values inside a matrix in a particular way.
 	   *
 	   * Examples:
 	   *
-	   *    format(6.4);                                        // '6.4'
-	   *    format(1240000);                                    // '1.24e6'
-	   *    format(1/3);                                        // '0.3333333333333333'
-	   *    format(1/3, 3);                                     // '0.333'
-	   *    format(21385, 2);                                   // '21000'
-	   *    format(12.071, {notation: 'fixed'});                // '12'
-	   *    format(2.3,    {notation: 'fixed', precision: 2});  // '2.30'
-	   *    format(52.8,   {notation: 'exponential'});          // '5.28e+1'
+	   *    math.format(6.4);                                        // returns '6.4'
+	   *    math.format(1240000);                                    // returns '1.24e6'
+	   *    math.format(1/3);                                        // returns '0.3333333333333333'
+	   *    math.format(1/3, 3);                                     // returns '0.333'
+	   *    math.format(21385, 2);                                   // returns '21000'
+	   *    math.format(12.071, {notation: 'fixed'});                // returns '12'
+	   *    math.format(2.3,    {notation: 'fixed', precision: 2});  // returns '2.30'
+	   *    math.format(52.8,   {notation: 'exponential'});          // returns '5.28e+1'
 	   *
-	   * @param {*} value             Value to be stringified
-	   * @param {Object | Function | Number} [options]
+	   * See also:
+	   *
+	   *    print
+	   *
+	   * @param {*} value                               Value to be stringified
+	   * @param {Object | Function | Number} [options]  Formatting options
 	   * @return {String} str The formatted value
 	   */
 	  math.format = function format (value, options) {
@@ -13396,6 +14889,17 @@ return /******/ (function(modules) { // webpackBootstrap
 	   * In case of a matrix or array, the test is done element wise, the
 	   * true and false part can be either a matrix/array with the same size
 	   * of the condition, or a scalar value.
+	   *
+	   * Syntax:
+	   *
+	   *    math.ifElse(condition, trueExpr, falseExpr
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    math.ifElse(true, 'yes', 'no');           // returns 'yes'
+	   *    math.ifElse([4, 6, 0, -1], true, false);  // returns [true, true, false, true]
 	   *
 	   * @param {Number | Boolean | String | Complex | BigNumber | Unit | Matrix | Array} condition
 	   *                        The conditional expression
@@ -13511,21 +15015,50 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	  /**
 	   * Import functions from an object or a module
-	   * @param {String | Object} object
-	   * @param {Object} [options]        Available options:
-	   *                                  {Boolean} override
-	   *                                      If true, existing functions will be
-	   *                                      overwritten. False by default.
-	   *                                  {Boolean} wrap
-	   *                                      If true (default), the functions will
-	   *                                      be wrapped in a wrapper function which
-	   *                                      converts data types like Matrix to
-	   *                                      primitive data types like Array.
-	   *                                      The wrapper is needed when extending
-	   *                                      math.js with libraries which do not
-	   *                                      support the math.js data types.
+	   *
+	   * Syntax:
+	   *
+	   *    math.import(object)
+	   *    math.import(object, options)
+	   *
+	   * Where:
+	   *
+	   * - `object: Object`
+	   *   An object with functions to be imported.
+	   * - `options: Object` An object with import options. Available options:
+	   *   - `override: boolean`
+	   *     If true, existing functions will be overwritten. False by default.
+	   *   - `wrap: boolean`
+	   *     If true (default), the functions will be wrapped in a wrapper function
+	   *     which converts data types like Matrix to primitive data types like Array.
+	   *     The wrapper is needed when extending math.js with libraries which do not
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    // define new functions and variables
+	   *    math.import({
+	   *      myvalue: 42,
+	   *      hello: function (name) {
+	   *        return 'hello, ' + name + '!';
+	   *      }
+	   *    });
+	   *
+	   *    // use the imported function and variable
+	   *    math.myvalue * 2;               // 84
+	   *    math.hello('user');             // 'hello, user!'
+	   *
+	   *    // import the npm module numbers
+	   *    // (must be installed first with `npm install numbers`)
+	   *    math.import('numbers');
+	   *
+	   *    math.fibonacci(7); // returns 13
+	   *
+	   * @param {String | Object} object  Object with functions to be imported.
+	   * @param {Object} [options]        Import options.
 	   */
-	// TODO: return status information
+	  // TODO: return status information
 	  math['import'] = function math_import(object, options) {
 	    var num = arguments.length;
 	    if (num != 1 && num != 2) {
@@ -13625,14 +15158,28 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = function (math) {
 	  var isMatrix = __webpack_require__(8).isMatrix;
 
+
 	  /**
 	   * Create a new matrix or array with the results of the callback function executed on
 	   * each entry of the matrix/array.
-	   * @param {Matrix/array} x      The container to iterate on.
-	   * @param {function} callback   The callback method is invoked with three
+	   *
+	   * Syntax:
+	   *
+	   *    math.map(x, callback)
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    math.map([1, 2, 3], function(value) {
+	   *      return value * value;
+	   *    });  // returns [1, 4, 9]
+	   *
+	   * @param {Matrix | Array} x    The matrix to iterate on.
+	   * @param {Function} callback   The callback method is invoked with three
 	   *                              parameters: the value of the element, the index
-	   *                              of the element, and the Matrix being traversed.
-	   * @return {Matrix/array} container
+	   *                              of the element, and the matrix being traversed.
+	   * @return {Matrix | array}     Transformed map of x
 	   */
 	  math.map = function (x, callback) {
 	    if (arguments.length != 2) {
@@ -13686,22 +15233,32 @@ return /******/ (function(modules) { // webpackBootstrap
 	   *
 	   * Example usage:
 	   *
+	   *     var math = mathjs();
+	   *
+	   *     // the following outputs: 'Lucy is 5 years old'
+	   *     math.print('Lucy is $age years old', {age: 5});
+	   *
 	   *     // the following outputs: 'The value of pi is 3.141592654'
-	   *     math.format('The value of pi is $pi', {pi: math.pi}, 10);
+	   *     math.print('The value of pi is $pi', {pi: math.pi}, 10);
 	   *
 	   *     // the following outputs: 'hello Mary! The date is 2013-03-23'
-	   *     math.format('Hello $user.name! The date is $date', {
+	   *     math.print('Hello $user.name! The date is $date', {
 	   *       user: {
 	   *         name: 'Mary',
 	   *       },
-	   *       date: new Date().toISOString().substring(0, 10)
+	   *       date: new Date(2013, 2, 23).toISOString().substring(0, 10)
 	   *     });
 	   *
-	   * @param {String} template
-	   * @param {Object} values
+	   * See also:
+	   *
+	   *     format
+	   *
+	   * @param {String} template     A string containing variable placeholders.
+	   * @param {Object} values       An object containing variables which will
+	   *                              be filled in in the template.
 	   * @param {Number} [precision]  Number of digits to format numbers.
 	   *                              If not provided, the value will not be rounded.
-	   * @return {String} str
+	   * @return {String} Interpolated string
 	   */
 	  math.print = function print (template, values, precision) {
 	    var num = arguments.length;
@@ -13756,13 +15313,22 @@ return /******/ (function(modules) { // webpackBootstrap
 	      Help = __webpack_require__(10);
 
 	  /**
-	   * Determines the type of a variable.
+	   * Determine the type of a variable.
 	   *
 	   * Syntax:
 	   *
-	   *     math.typeof(x)
+	   *    math.typeof(x)
 	   *
-	   * @param {*} x
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    math.typeof(3.5);             // returns 'number'
+	   *    math.typeof(2 - 4i);          // returns 'complex'
+	   *    math.typeof(45 deg);          // returns 'unit'
+	   *    math.typeof("hello world");   // returns 'string'
+	   *
+	   * @param {*} x  The variable for which to test the type.
 	   * @return {String} Lower case type, for example 'number', 'string', 'array'.
 	   */
 	  math['typeof'] = function _typeof (x) {
@@ -13800,9 +15366,23 @@ return /******/ (function(modules) { // webpackBootstrap
 	  var isMatrix = __webpack_require__(8).isMatrix;
 
 	  /**
-	   * Execute a callback method on each entry of the matrix or the array.
-	   * @param {Matrix/array} x      The container to iterate on.
-	   * @param {function} callback   The callback method is invoked with three
+	   * Iterate over all elements of a matrix/array, and executes the given callback function.
+	   *
+	   * Syntax:
+	   *
+	   *    math.forEach(x, callback)
+	   *
+	   * Examples:
+	   *
+	   *    var math = mathjs();
+	   *
+	   *    math.forEach([1, 2, 3], function(value) {
+	   *      console.log(value);
+	   *    });
+	   *    // outputs 1, 2, 3
+	   *
+	   * @param {Matrix | Array} x    The matrix to iterate on.
+	   * @param {Function} callback   The callback function is invoked with three
 	   *                              parameters: the value of the element, the index
 	   *                              of the element, and the Matrix/array being traversed.
 	   */
@@ -13834,7 +15414,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      }
 	    };
 	    recurse(array, 0);
-	  };
+	  }
 
 	};
 
@@ -13842,178 +15422,13 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 118 */
 /***/ function(module, exports, __webpack_require__) {
 
-	/**
-	 * Create a syntax error with the message:
-	 *     'Wrong number of arguments in function <fn> (<count> provided, <min>-<max> expected)'
-	 * @param {String} fn     Function name
-	 * @param {Number} count  Actual argument count
-	 * @param {Number} min    Minimum required argument count
-	 * @param {Number} [max]  Maximum required argument count
-	 * @extends Error
-	 */
-	function ArgumentsError(fn, count, min, max) {
-	  if (!(this instanceof ArgumentsError)) {
-	    throw new SyntaxError('Constructor must be called with the new operator');
-	  }
-
-	  this.fn = fn;
-	  this.count = count;
-	  this.min = min;
-	  this.max = max;
-
-	  this.message = 'Wrong number of arguments in function ' + fn +
-	      ' (' + count + ' provided, ' +
-	      min + ((max != undefined) ? ('-' + max) : '') + ' expected)';
-
-	  this.stack = (new Error()).stack;
-	}
-
-	ArgumentsError.prototype = new Error();
-	ArgumentsError.prototype.constructor = Error;
-	ArgumentsError.prototype.name = 'ArgumentsError';
-
-	module.exports = ArgumentsError;
-
-
-/***/ },
-/* 119 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/**
-	 * Create a range error with the message:
-	 *     'Dimension mismatch (<actual size> != <expected size>)'
-	 * @param {number | number[]} actual        The actual size
-	 * @param {number | number[]} expected      The expected size
-	 * @param {string} [relation='!=']          Optional relation between actual
-	 *                                          and expected size: '!=', '<', etc.
-	 * @extends RangeError
-	 */
-	function DimensionError(actual, expected, relation) {
-	  if (!(this instanceof DimensionError)) {
-	    throw new SyntaxError('Constructor must be called with the new operator');
-	  }
-
-	  this.actual   = actual;
-	  this.expected = expected;
-	  this.relation = relation;
-
-	  this.message = 'Dimension mismatch (' +
-	      (Array.isArray(actual) ? ('[' + actual.join(', ') + ']') : actual) +
-	      ' ' + (this.relation || '!=') + ' ' +
-	      (Array.isArray(expected) ? ('[' + expected.join(', ') + ']') : expected) +
-	      ')';
-
-	  this.stack = (new Error()).stack;
-	}
-
-	DimensionError.prototype = new RangeError();
-	DimensionError.prototype.constructor = RangeError;
-	DimensionError.prototype.name = 'DimensionError';
-
-	module.exports = DimensionError;
-
-
-/***/ },
-/* 120 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/**
-	 * Create a range error with the message:
-	 *     'Index out of range (index < min)'
-	 *     'Index out of range (index < max)'
-	 *
-	 * @param {number} index     The actual index
-	 * @param {number} [min=0]   Minimum index (included)
-	 * @param {number} [max]     Maximum index (excluded)
-	 * @extends RangeError
-	 */
-	function IndexError(index, min, max) {
-	  if (!(this instanceof IndexError)) {
-	    throw new SyntaxError('Constructor must be called with the new operator');
-	  }
-
-	  this.index = index;
-	  if (arguments.length < 3) {
-	    this.min = 0;
-	    this.max = min;
-	  }
-	  else {
-	    this.min = min;
-	    this.max = max;
-	  }
-
-	  if (this.min !== undefined && this.index < this.min) {
-	    this.message = 'Index out of range (' + this.index + ' < ' + this.min + ')';
-	  }
-	  else if (this.max !== undefined && this.index >= this.max) {
-	    this.message = 'Index out of range (' + this.index + ' > ' + (this.max - 1) + ')';
-	  }
-	  else {
-	    this.message = 'Index out of range (' + this.index + ')';
-	  }
-
-	  this.stack = (new Error()).stack;
-	}
-
-	IndexError.prototype = new RangeError();
-	IndexError.prototype.constructor = RangeError;
-	IndexError.prototype.name = 'IndexError';
-
-	module.exports = IndexError;
-
-
-/***/ },
-/* 121 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/**
-	 * Create a TypeError with message:
-	 *      'Function <fn> does not support a parameter of type <type>';
-	 * @param {String} fn     Function name
-	 * @param {*...} [types]  The types of the function arguments
-	 * @extends TypeError
-	 */
-	function UnsupportedTypeError(fn, types) {
-	  if (!(this instanceof UnsupportedTypeError)) {
-	    throw new SyntaxError('Constructor must be called with the new operator');
-	  }
-
-	  this.fn = fn;
-	  this.types = Array.prototype.splice.call(arguments, 1);
-
-	  if (!fn) {
-	    this.message = 'Unsupported type of argument';
-	  }
-	  else {
-	    if (this.types.length == 0) {
-	      this.message = 'Unsupported type of argument in function ' + fn;
-	    }
-	    else {
-	      this.message = 'Function ' + fn + '(' + this.types.join(', ') + ') not supported';
-	    }
-	  }
-
-	  this.stack = (new Error()).stack;
-	}
-
-	UnsupportedTypeError.prototype = new TypeError();
-	UnsupportedTypeError.prototype.constructor = TypeError;
-	UnsupportedTypeError.prototype.name = 'UnsupportedTypeError';
-
-	module.exports = UnsupportedTypeError;
-
-
-/***/ },
-/* 122 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var __WEBPACK_AMD_DEFINE_RESULT__;/* WEBPACK VAR INJECTION */(function(module) {/*! decimal.js v2.0.1 https://github.com/MikeMcl/decimal.js/LICENCE */
+	var __WEBPACK_AMD_DEFINE_RESULT__;/* WEBPACK VAR INJECTION */(function(module) {/*! decimal.js v2.0.3 https://github.com/MikeMcl/decimal.js/LICENCE */
 	;(function (global) {
 	    'use strict';
 
 
 	    /*
-	     *  decimal.js v2.0.1
+	     *  decimal.js v2.0.3
 	     *  An arbitrary-precision Decimal type for JavaScript.
 	     *  https://github.com/MikeMcl/decimal.js
 	     *  Copyright (c) 2014 Michael Mclaughlin <M8ch88l@gmail.com>
@@ -15461,7 +16876,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var x = this;
 
 	        // Ensure zero has correct sign.
-	        return +x || ( x | 0 ) * x['s'];
+	        return +x || ( x['s'] ? 0 * x['s'] : NaN );
 	    };
 
 
@@ -16554,7 +17969,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                return x;
 	            }
 
-	            // Remove any digits after the required decimal places.
+	            // Truncate excess digits.
 	            if ( xc.length > sd ) {
 	                xc.length = sd;
 	            }
@@ -17608,7 +19023,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        module.exports = DecimalConstructor;
 
 	        if ( true ) {
-	            crypto = __webpack_require__(258);
+	            crypto = __webpack_require__(256);
 	        }
 	    } else {
 	        crypto = global['crypto'];
@@ -17631,16 +19046,181 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	})(this);
 	
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(259)(module)))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(260)(module)))
+
+/***/ },
+/* 119 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/**
+	 * Create a syntax error with the message:
+	 *     'Wrong number of arguments in function <fn> (<count> provided, <min>-<max> expected)'
+	 * @param {String} fn     Function name
+	 * @param {Number} count  Actual argument count
+	 * @param {Number} min    Minimum required argument count
+	 * @param {Number} [max]  Maximum required argument count
+	 * @extends Error
+	 */
+	function ArgumentsError(fn, count, min, max) {
+	  if (!(this instanceof ArgumentsError)) {
+	    throw new SyntaxError('Constructor must be called with the new operator');
+	  }
+
+	  this.fn = fn;
+	  this.count = count;
+	  this.min = min;
+	  this.max = max;
+
+	  this.message = 'Wrong number of arguments in function ' + fn +
+	      ' (' + count + ' provided, ' +
+	      min + ((max != undefined) ? ('-' + max) : '') + ' expected)';
+
+	  this.stack = (new Error()).stack;
+	}
+
+	ArgumentsError.prototype = new Error();
+	ArgumentsError.prototype.constructor = Error;
+	ArgumentsError.prototype.name = 'ArgumentsError';
+
+	module.exports = ArgumentsError;
+
+
+/***/ },
+/* 120 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/**
+	 * Create a range error with the message:
+	 *     'Dimension mismatch (<actual size> != <expected size>)'
+	 * @param {number | number[]} actual        The actual size
+	 * @param {number | number[]} expected      The expected size
+	 * @param {string} [relation='!=']          Optional relation between actual
+	 *                                          and expected size: '!=', '<', etc.
+	 * @extends RangeError
+	 */
+	function DimensionError(actual, expected, relation) {
+	  if (!(this instanceof DimensionError)) {
+	    throw new SyntaxError('Constructor must be called with the new operator');
+	  }
+
+	  this.actual   = actual;
+	  this.expected = expected;
+	  this.relation = relation;
+
+	  this.message = 'Dimension mismatch (' +
+	      (Array.isArray(actual) ? ('[' + actual.join(', ') + ']') : actual) +
+	      ' ' + (this.relation || '!=') + ' ' +
+	      (Array.isArray(expected) ? ('[' + expected.join(', ') + ']') : expected) +
+	      ')';
+
+	  this.stack = (new Error()).stack;
+	}
+
+	DimensionError.prototype = new RangeError();
+	DimensionError.prototype.constructor = RangeError;
+	DimensionError.prototype.name = 'DimensionError';
+
+	module.exports = DimensionError;
+
+
+/***/ },
+/* 121 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/**
+	 * Create a range error with the message:
+	 *     'Index out of range (index < min)'
+	 *     'Index out of range (index < max)'
+	 *
+	 * @param {number} index     The actual index
+	 * @param {number} [min=0]   Minimum index (included)
+	 * @param {number} [max]     Maximum index (excluded)
+	 * @extends RangeError
+	 */
+	function IndexError(index, min, max) {
+	  if (!(this instanceof IndexError)) {
+	    throw new SyntaxError('Constructor must be called with the new operator');
+	  }
+
+	  this.index = index;
+	  if (arguments.length < 3) {
+	    this.min = 0;
+	    this.max = min;
+	  }
+	  else {
+	    this.min = min;
+	    this.max = max;
+	  }
+
+	  if (this.min !== undefined && this.index < this.min) {
+	    this.message = 'Index out of range (' + this.index + ' < ' + this.min + ')';
+	  }
+	  else if (this.max !== undefined && this.index >= this.max) {
+	    this.message = 'Index out of range (' + this.index + ' > ' + (this.max - 1) + ')';
+	  }
+	  else {
+	    this.message = 'Index out of range (' + this.index + ')';
+	  }
+
+	  this.stack = (new Error()).stack;
+	}
+
+	IndexError.prototype = new RangeError();
+	IndexError.prototype.constructor = RangeError;
+	IndexError.prototype.name = 'IndexError';
+
+	module.exports = IndexError;
+
+
+/***/ },
+/* 122 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/**
+	 * Create a TypeError with message:
+	 *      'Function <fn> does not support a parameter of type <type>';
+	 * @param {String} fn     Function name
+	 * @param {*...} [types]  The types of the function arguments
+	 * @extends TypeError
+	 */
+	function UnsupportedTypeError(fn, types) {
+	  if (!(this instanceof UnsupportedTypeError)) {
+	    throw new SyntaxError('Constructor must be called with the new operator');
+	  }
+
+	  this.fn = fn;
+	  this.types = Array.prototype.splice.call(arguments, 1);
+
+	  if (!fn) {
+	    this.message = 'Unsupported type of argument';
+	  }
+	  else {
+	    if (this.types.length == 0) {
+	      this.message = 'Unsupported type of argument in function ' + fn;
+	    }
+	    else {
+	      this.message = 'Function ' + fn + '(' + this.types.join(', ') + ') not supported';
+	    }
+	  }
+
+	  this.stack = (new Error()).stack;
+	}
+
+	UnsupportedTypeError.prototype = new TypeError();
+	UnsupportedTypeError.prototype.constructor = TypeError;
+	UnsupportedTypeError.prototype.name = 'UnsupportedTypeError';
+
+	module.exports = UnsupportedTypeError;
+
 
 /***/ },
 /* 123 */
 /***/ function(module, exports, __webpack_require__) {
 
 	exports.array = __webpack_require__(153);
-	exports['boolean'] = __webpack_require__(256);
+	exports['boolean'] = __webpack_require__(257);
 	exports.number = __webpack_require__(154);
-	exports.bignumber = __webpack_require__(257);
+	exports.bignumber = __webpack_require__(258);
 	exports.object = __webpack_require__(3);
 	exports.string = __webpack_require__(138);
 	exports.types = __webpack_require__(156);
@@ -17732,6 +19312,31 @@ return /******/ (function(modules) { // webpackBootstrap
 	  return string.format(this.nodes);
 	};
 
+	/**
+	 * Get LaTeX representation
+	 * @return {String} str
+	 */
+	ArrayNode.prototype.toTex = function(type) {
+	  type = type || 'bmatrix';
+	  var s = '\\begin{' + type + '}';
+
+	  this.nodes.forEach(function(node) {
+	    if (node.nodes) {
+	      s += node.nodes.map(function(childNode) {
+	        return childNode.toTex();
+	      }).join('&');
+	    }
+	    else {
+	      s += node.toTex();
+	    }
+
+	    // new line
+	    s += '\\\\';
+	  });
+	  s += '\\end{' + type + '}';
+	  return s;
+	};
+
 	module.exports = ArrayNode;
 
 
@@ -17740,6 +19345,9 @@ return /******/ (function(modules) { // webpackBootstrap
 /***/ function(module, exports, __webpack_require__) {
 
 	var Node = __webpack_require__(137),
+	    ArrayNode = __webpack_require__(124),
+
+	    latex = __webpack_require__(259),
 	    isString = __webpack_require__(138).isString;
 
 	/**
@@ -17805,6 +19413,19 @@ return /******/ (function(modules) { // webpackBootstrap
 	  return this.name + ' = ' + this.expr.toString();
 	};
 
+	/**
+	 * Get LaTeX representation
+	 * @return {String}
+	 */
+	AssignmentNode.prototype.toTex = function() {
+	  var brace;
+	  if (this.expr instanceof ArrayNode) {
+	    brace = ['\\mathbf{', '}'];
+	  }
+	  return latex.addBraces(latex.toSymbol(this.name), brace) + '=' +
+	      latex.addBraces(this.expr.toTex());
+	};
+
 	module.exports = AssignmentNode;
 
 /***/ },
@@ -17812,7 +19433,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /***/ function(module, exports, __webpack_require__) {
 
 	var Node = __webpack_require__(137),
-	    isBoolean = __webpack_require__(256).isBoolean;
+	    isBoolean = __webpack_require__(257).isBoolean;
 
 	/**
 	 * @constructor BlockNode
@@ -17910,6 +19531,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }).join('\n');
 	};
 
+	/**
+	 * Get LaTeX representation
+	 * @return {String} str
+	 */
+	BlockNode.prototype.toTex = function() {
+	  return this.params.map(function (param) {
+	    return param.node.toTex() + (param.visible ? '' : ';');
+	  }).join('\n');
+	};
+
 	module.exports = BlockNode;
 
 
@@ -18002,6 +19633,33 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }
 	};
 
+	/**
+	 * Get LaTeX representation
+	 * @return {String} str
+	 */
+	ConstantNode.prototype.toTex = function() {
+	  var value = this.value,
+	      index;
+	  switch (this.valueType) {
+	    case 'string':
+	      return '\\text{' + value + '}';
+
+	    case 'complex':
+	      return value + 'i';
+
+	    case 'number':
+	      index = value.toLowerCase().indexOf('e');
+	      if (index !== -1) {
+	        return value.substring(0, index) + ' \\cdot 10^{' +
+	            value.substring(index + 1) + '}';
+	      }
+	      return value;
+
+	    default:
+	      return value;
+	  }
+	};
+
 	module.exports = ConstantNode;
 
 
@@ -18010,6 +19668,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /***/ function(module, exports, __webpack_require__) {
 
 	var Node = __webpack_require__(137),
+	    latex = __webpack_require__(259),
 	    isString = __webpack_require__(138).isString;
 	    isArray = Array.isArray;
 
@@ -18096,6 +19755,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	  return 'function ' + this.name +
 	      '(' + this.args.join(', ') + ') = ' +
 	      this.expr.toString();
+	};
+
+	/**
+	 * get LaTeX representation
+	 * @return {String} str
+	 */
+	FunctionNode.prototype.toTex = function() {
+	  return this.name +
+	      latex.addBraces(this.args.map(latex.toSymbol).join(', '), true) + '=' +
+	      latex.addBraces(this.expr.toTex());
 	};
 
 	module.exports = FunctionNode;
@@ -18291,13 +19960,25 @@ return /******/ (function(modules) { // webpackBootstrap
 	  return this.object.toString() + '[' + this.ranges.join(', ') + ']';
 	};
 
+	/**
+	 * Get LaTeX representation
+	 * @return {String} str
+	 */
+	IndexNode.prototype.toTex = function() {
+	  return this.object.toTex() + '[' + this.ranges.join(', ') + ']';
+	};
+
 	module.exports = IndexNode;
 
 /***/ },
 /* 130 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var Node = __webpack_require__(137);
+	var Node = __webpack_require__(137),
+	    ConstantNode = __webpack_require__(127),
+	    SymbolNode = __webpack_require__(133),
+	    ParamsNode = __webpack_require__(131),
+	    latex = __webpack_require__(259);
 
 	/**
 	 * @constructor OperatorNode
@@ -18400,6 +20081,91 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }
 	};
 
+	/**
+	 * Get LaTeX representation
+	 * @return {String} str
+	 */
+	OperatorNode.prototype.toTex = function() {
+	  var params = this.params,
+	      mop = latex.toOperator(this.op),
+	      lp = params[0],
+	      rp = params[1];
+
+	  switch (params.length) {
+	    case 1:
+	      if (this.op === '-' || this.op === '+') {
+	        // special case: unary minus
+	        return this.op + lp.toTex();
+	      }
+	      // for example '5!'
+	      return lp.toTex() + this.op;
+
+	    case 2: // for example '2+3'
+	      var lhs = lp.toTex(),
+	          lhb = false,
+	          rhs = rp.toTex(),
+	          rhb = false,
+	          lop = '',
+	          rop = '';
+
+	      switch (this.op) {
+	        case '/':
+	          lop = mop;
+	          mop = '';
+
+	          break;
+
+	        case '*':
+	          if (lp instanceof OperatorNode) {
+	            if (lp.op === '+' || lp.op === '-') {
+	              lhb = true;
+	            }
+	          }
+
+	          if (rp instanceof OperatorNode) {
+	            if (rp.op === '+' || rp.op === '-') {
+	              rhb = true;
+	            }
+	            else if (rp.op === '*') {
+	              rhb = true;
+	            }
+	          }
+
+	          if ((lp instanceof ConstantNode || lp instanceof OperatorNode) &&
+	              (rp instanceof ConstantNode || rp instanceof OperatorNode)) {
+	            mop = ' \\cdot ';
+	          }
+	          else {
+	            mop = ' \\, ';
+	          }
+
+	          break;
+
+	        case '^':
+	          if (lp instanceof OperatorNode || lp instanceof ParamsNode) {
+	            lhb = true;
+	          }
+	          else if (lp instanceof SymbolNode) {
+	            lhb = null;
+	          }
+
+	          break;
+
+	        case 'to':
+	          rhs = latex.toUnit(rhs, true);
+	          break;
+	      }
+
+	      lhs = latex.addBraces(lhs, lhb);
+	      rhs = latex.addBraces(rhs, rhb);
+
+	      return lop + lhs + mop + rhs + rop;
+
+	    default: // this should not occur. format as a function call
+	      return mop + '(' + this.params.map(latex.toSymbol).join(', ') + ')';
+	  }
+	};
+
 	module.exports = OperatorNode;
 
 
@@ -18409,6 +20175,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var Node = __webpack_require__(137),
 
+	    latex = __webpack_require__(259),
 	    isNode = Node.isNode;
 
 	/**
@@ -18486,6 +20253,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	ParamsNode.prototype.toString = function() {
 	  // format the parameters like "add(2, 4.2)"
 	  return this.object.toString() + '(' + this.params.join(', ') + ')';
+	};
+
+	/**
+	 * Get LaTeX representation
+	 * @return {String} str
+	 */
+	ParamsNode.prototype.toTex = function() {
+	  return latex.toParams(this);
 	};
 
 	module.exports = ParamsNode;
@@ -18580,6 +20355,20 @@ return /******/ (function(modules) { // webpackBootstrap
 	  return str;
 	};
 
+	/**
+	 * Get LaTeX representation
+	 * @return {String} str
+	 */
+	RangeNode.prototype.toTex = function() {
+	  var str = this.start.toTex();
+	  if (this.step) {
+	    str += ':' + this.step.toTex();
+	  }
+	  str += ':' + this.end.toTex();
+
+	  return str;
+	};
+
 	module.exports = RangeNode;
 
 
@@ -18590,6 +20379,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	var Node = __webpack_require__(137),
 	    Unit = __webpack_require__(9),
 
+	    latex = __webpack_require__(259),
 	    isString = __webpack_require__(138).isString;
 
 	/**
@@ -18653,6 +20443,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	  return this.name;
 	};
 
+	/**
+	 * Get LaTeX representation
+	 * @return {String} str
+	 * @override
+	 */
+	SymbolNode.prototype.toTex = function() {
+	  return latex.toSymbol(this.name);
+	};
+
 	module.exports = SymbolNode;
 
 
@@ -18660,7 +20459,9 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 134 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var OperatorNode = __webpack_require__(130);
+	var OperatorNode = __webpack_require__(130),
+
+	    latex = __webpack_require__(259);
 
 	/**
 	 * @constructor TernaryNode
@@ -18699,6 +20500,27 @@ return /******/ (function(modules) { // webpackBootstrap
 	      this.params[2];
 	};
 
+	/**
+	 * Get LaTeX representation
+	 * @return {String} str
+	 */
+	TernaryNode.prototype.toTex = function() {
+	  var s = (
+	        latex.addBraces(this.params[1].toTex()) +
+	        ', &\\quad' +
+	        latex.addBraces('\\text{if}\\;' + this.params[0].toTex())
+	      ) + '\\\\' + (
+	        latex.addBraces(this.params[2].toTex()) +
+	        ', &\\quad' +
+	        latex.addBraces('\\text{otherwise}')
+	      );
+
+	  return latex.addBraces(s, [
+	        '\\left\\{\\begin{array}{l l}',
+	        '\\end{array}\\right.'
+	      ]);
+	};
+
 	module.exports = TernaryNode;
 
 
@@ -18710,6 +20532,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    Unit = __webpack_require__(9),
 
+	    latex = __webpack_require__(259),
 	    isString = __webpack_require__(138).isString;
 
 	/**
@@ -18773,6 +20596,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	 */
 	UnitNode.prototype.toString = function() {
 	  return this.value + ' ' + this.unit;
+	};
+
+	/**
+	 * Get LaTeX representation
+	 * @return {String} str
+	 */
+	UnitNode.prototype.toTex = function() {
+	  return this.value + latex.toUnit(this.unit);
 	};
 
 	module.exports = UnitNode;
@@ -18854,6 +20685,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	 */
 	UpdateNode.prototype.toString = function() {
 	  return this.index.toString() + ' = ' + this.expr.toString();
+	};
+
+	/**
+	 * Get LaTeX representation
+	 * @return {String}
+	 */
+	UpdateNode.prototype.toTex = function() {
+	  return this.index.toTex() + ' = ' + this.expr.toTex();
 	};
 
 	module.exports = UpdateNode;
@@ -19004,6 +20843,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	};
 
 	/**
+	 * Get LaTeX representation
+	 * @return {String}
+	 */
+	Node.prototype.toTex = function() {
+	  return '';
+	};
+
+	/**
 	 * Test whether an object is a Node
 	 * @param {*} object
 	 * @returns {boolean} isNode
@@ -19020,8 +20867,8 @@ return /******/ (function(modules) { // webpackBootstrap
 /***/ function(module, exports, __webpack_require__) {
 
 	var number = __webpack_require__(154),
-	    bignumber = __webpack_require__(257),
-	    BigNumber = __webpack_require__(122);
+	    bignumber = __webpack_require__(258),
+	    BigNumber = __webpack_require__(118);
 
 	/**
 	 * Test whether value is a String
@@ -19404,8 +21251,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	    object = __webpack_require__(3),
 	    types = __webpack_require__(156),
 
-	    DimensionError = __webpack_require__(119),
-	    IndexError = __webpack_require__(120),
+	    DimensionError = __webpack_require__(120),
+	    IndexError = __webpack_require__(121),
 
 	    isArray = Array.isArray;
 
@@ -20097,7 +21944,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    'ceil(x)'
 	  ],
 	  'description':
-	      'Round a value towards plus infinity.If x is complex, both real and imaginary part are rounded towards plus infinity.',
+	      'Round a value towards plus infinity. If x is complex, both real and imaginary part are rounded towards plus infinity.',
 	  'examples': [
 	    'ceil(3.2)',
 	    'ceil(3.8)',
@@ -20301,8 +22148,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    '(exp(i*x) == cos(x) + i*sin(x))   # Euler\'s formula'
 	  ],
 	  'seealso': [
-	    'square',
-	    'multiply',
+	    'pow',
 	    'log'
 	  ]
 	};
@@ -20319,7 +22165,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    'fix(x)'
 	  ],
 	  'description':
-	      'Round a value towards zero.If x is complex, both real and imaginary part are rounded towards zero.',
+	      'Round a value towards zero. If x is complex, both real and imaginary part are rounded towards zero.',
 	  'examples': [
 	    'fix(3.2)',
 	    'fix(3.8)',
@@ -20462,10 +22308,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	    'log(3.5)',
 	    'a = log(2.4)',
 	    'exp(a)',
-	    '10 ^ 3',
-	    'log(1000, 10)',
-	    'log(1000) / log(10)',
-	    'b = logb(1024, 2)',
+	    '10 ^ 4',
+	    'log(10000, 10)',
+	    'log(10000) / log(10)',
+	    'b = log(1024, 2)',
 	    '2 ^ b'
 	  ],
 	  'seealso': [
@@ -20486,11 +22332,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	  ],
 	  'description': 'Compute the 10-base logarithm of a value.',
 	  'examples': [
-	    'log10(1000)',
-	    '10 ^ 3',
-	    'log10(0.01)',
-	    'log(1000) / log(10)',
-	    'log(1000, 10)'
+	    'log10(0.00001)',
+	    'log10(10000)',
+	    '10 ^ 4',
+	    'log(10000) / log(10)',
+	    'log(10000, 10)'
 	  ],
 	  'seealso': [
 	    'exp',
@@ -20521,7 +22367,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    'isOdd(2)',
 	    'isOdd(3)'
 	  ],
-	  'seealso': []
+	  'seealso': ['divide']
 	};
 
 
@@ -20538,8 +22384,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	  ],
 	  'description': 'multiply two values.',
 	  'examples': [
-	    '2.1 * 3.6',
-	    'ans / 3.6',
+	    '2.1 * 3.4',
+	    'ans / 3.4',
 	    '2 * 3 + 4',
 	    '2 * (3 + 4)',
 	    '3 * 2.1 km'
@@ -20563,10 +22409,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	  ],
 	  'description': 'Calculate the norm of a number, vector or matrix.',
 	  'examples': [
-	    'norm([[1, 2], [3, 4]])',
-	    'norm([[1, 2, 3, 4]], 3.5)',
-	    'norm(-4.2)',
-	    'norm([[1, 2], [-3, -4]], \'fro\')'
+	    'abs(-3.5)',
+	    'norm(-3.5)',
+	    'norm(3 - 4i))',
+	    'norm([1, 2, -3], Infinity)',
+	    'norm([1, 2, -3], -Infinity)',
+	    'norm([3, 4], 2)',
+	    'norm([[1, 2], [3, 4]], 1)',
+	    'norm([[1, 2], [3, 4]], \'inf\')',
+	    'norm([[1, 2], [3, 4]], \'fro\')'
 	  ]
 	};
 
@@ -20589,9 +22440,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    '2*2*2',
 	    '1 + e ^ (pi * i)'
 	  ],
-	  'seealso': [
-	    'unequal', 'smaller', 'larger', 'smallereq', 'largereq'
-	  ]
+	  'seealso': [ 'multiply' ]
 	};
 
 
@@ -20858,7 +22707,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  'examples': [
 	    'arg(2 + 2i)',
 	    'atan2(3, 2)',
-	    'arg(2 - 3i)'
+	    'arg(2 + 3i)'
 	  ],
 	  'seealso': [
 	    're',
@@ -21209,17 +23058,17 @@ return /******/ (function(modules) { // webpackBootstrap
 	  'name': 'concat',
 	  'category': 'Matrix',
 	  'syntax': [
-	    'concat(a, b, c, ...)',
-	    'concat(a, b, c, ..., dim)'
+	    'concat(A, B, C, ...)',
+	    'concat(A, B, C, ..., dim)'
 	  ],
 	  'description': 'Concatenate matrices. By default, the matrices are concatenated by the first dimension. The dimension on which to concatenate can be provided as last argument.',
 	  'examples': [
-	    'a = [1, 2; 5, 6]',
-	    'b = [3, 4; 7, 8]',
-	    'concat(a, b)',
-	    '[a, b]',
-	    'concat(a, b, 2)',
-	    '[a; b]'
+	    'A = [1, 2; 5, 6]',
+	    'B = [3, 4; 7, 8]',
+	    'concat(A, B)',
+	    '[A, B]',
+	    'concat(A, B, 1)',
+	    '[A; B]'
 	  ],
 	  'seealso': [
 	    'det', 'diag', 'eye', 'inv', 'ones', 'range', 'size', 'squeeze', 'subset', 'transpose', 'zeros'
@@ -21259,7 +23108,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    'diag(x)',
 	    'diag(x, k)'
 	  ],
-	  'description': 'Create a diagonal matrix or retrieve the diagonal of a matrix. When x is a vector, a matrix with the vector values on the diagonal will be returned. When x is a matrix, a vector with the diagonal values of the matrix is returned.When k is provided, the k-th diagonal will be filled in or retrieved, if k is positive, the values are placed on the super diagonal. When k is negative, the values are placed on the sub diagonal.',
+	  'description': 'Create a diagonal matrix or retrieve the diagonal of a matrix. When x is a vector, a matrix with the vector values on the diagonal will be returned. When x is a matrix, a vector with the diagonal values of the matrix is returned. When k is provided, the k-th diagonal will be filled in or retrieved, if k is positive, the values are placed on the super diagonal. When k is negative, the values are placed on the sub diagonal.',
 	  'examples': [
 	    'diag(1:3)',
 	    'diag(1:3, 1)',
@@ -21593,7 +23442,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    '5*4*3*2*1',
 	    '3!'
 	  ],
-	  'seealso': []
+	  'seealso': ['combinations', 'permutations']
 	};
 
 
@@ -21611,7 +23460,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  'description': 'Compute the number of permutations of n items taken k at a time',
 	  'examples': [
 	    'permutations(5)',
-	    'permutations(5, 4)'
+	    'permutations(5, 3)'
 	  ],
 	  'seealso': ['combinations', 'factorial']
 	};
@@ -21766,7 +23615,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  ],
 	  'description': 'Compute the median of all values. The values are sorted and the middle value is returned. In case of an even number of values, the average of the two middle values is returned.',
 	  'examples': [
-	    'median(4, 2, 7)',
+	    'median(5, 2, 7)',
 	    'median([3, -1, 5, 7])'
 	  ],
 	  'seealso': [
@@ -21957,7 +23806,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  ],
 	  'seealso': [
 	    'cos',
-	    'acos',
+	    'atan',
 	    'asin'
 	  ]
 	};
@@ -21981,7 +23830,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  'seealso': [
 	    'sin',
 	    'acos',
-	    'asin'
+	    'atan'
 	  ]
 	};
 
@@ -22074,11 +23923,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  ],
 	  'description': 'Compute the hyperbolic cosine of x in radians.',
 	  'examples': [
-	    'cosh(2)',
-	    'cosh(pi / 4) ^ 2',
-	    'cosh(180 deg)',
-	    'cosh(60 deg)',
-	    'sinh(0.2)^2 + cosh(0.2)^2'
+	    'cosh(0.5)'
 	  ],
 	  'seealso': [
 	    'sinh',
@@ -22123,7 +23968,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	  ],
 	  'description': 'Compute the hyperbolic cotangent of x in radians.',
 	  'examples': [
-	    'coth(2)'
+	    'coth(2)',
+	    '1 / tanh(2)'
 	  ],
 	  'seealso': [
 	    'sech',
@@ -22263,11 +24109,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  ],
 	  'description': 'Compute the hyperbolic sine of x in radians.',
 	  'examples': [
-	    'sinh(2)',
-	    'sinh(pi / 4) ^ 2',
-	    'sinh(90 deg)',
-	    'sinh(30 deg)',
-	    'sinh(0.2)^2 + cosh(0.2)^2'
+	    'sinh(0.5)'
 	  ],
 	  'seealso': [
 	    'cosh',
@@ -22314,9 +24156,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  'description': 'Compute the hyperbolic tangent of x in radians.',
 	  'examples': [
 	    'tanh(0.5)',
-	    'sinh(0.5) / cosh(0.5)',
-	    'tanh(pi / 4)',
-	    'tanh(45 deg)'
+	    'sinh(0.5) / cosh(0.5)'
 	  ],
 	  'seealso': [
 	    'sinh',
@@ -22338,8 +24178,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	  ],
 	  'description': 'Change the unit of a value.',
 	  'examples': [
-	    '5 inch in cm',
-	    '3.2kg in g',
+	    '5 inch to cm',
+	    '3.2kg to g',
 	    '16 bytes in bits'
 	  ],
 	  'seealso': []
@@ -22380,7 +24220,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  ],
 	  'description': 'Create a new matrix or array with the results of the callback function executed on each entry of the matrix/array.',
 	  'examples': [
-	    'map([1, 2, 3], function(val) { return math.max(val, 1.5) })'
+	    'map([1, 2, 3], function(val) { return value * value })'
 	  ],
 	  'seealso': []
 	};
@@ -22396,11 +24236,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	  'syntax': [
 	    'forEach(x, callback)'
 	  ],
-	  'description': 'Iterates over all elements of a matrix/array, and executes the given callback.',
+	  'description': 'Iterates over all elements of a matrix/array, and executes the given callback function.',
 	  'examples': [
 	    'forEach([1, 2, 3], function(val) { console.log(val) })'
 	  ],
-	  'seealso': []
+	  'seealso': ['unit']
 	};
 
 
@@ -22438,7 +24278,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  ],
 	  'description': 'Executes a conditional expression.',
 	  'examples': [
-	    'ifElse(10 > 0, 10, 0)',
+	    'ifElse(10 > 0, 1, 0)',
 	    'ifElse("", true, false)',
 	    'ifElse([4, 6, 0, -1], true, false)'
 	  ],
@@ -22490,6 +24330,12 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 256 */
 /***/ function(module, exports, __webpack_require__) {
 
+	module.exports = __WEBPACK_EXTERNAL_MODULE_256__;
+
+/***/ },
+/* 257 */
+/***/ function(module, exports, __webpack_require__) {
+
 	/**
 	 * Test whether value is a Boolean
 	 * @param {*} value
@@ -22501,10 +24347,10 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 257 */
+/* 258 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var BigNumber = __webpack_require__(122),
+	var BigNumber = __webpack_require__(118),
 	    isNumber = __webpack_require__(154).isNumber;
 	    digits = __webpack_require__(154).digits;
 
@@ -22703,63 +24549,502 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 258 */
+/* 259 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var Buffer = __webpack_require__(264).Buffer
-	var rng = __webpack_require__(260)
+	var ArrayNode = __webpack_require__(124),
+	    OperatorNode = __webpack_require__(130);
 
-	function error () {
-	  var m = [].slice.call(arguments).join(' ')
-	  throw new Error([
-	    m,
-	    'we accept pull requests',
-	    'http://github.com/dominictarr/crypto-browserify'
-	    ].join('\n'))
-	}
+	// GREEK LETTERS
+	var greek = {
+	  Alpha: 'A',     alpha: true,
+	  Beta: 'B',      beta: true,
+	  Gamma: true,    gamma: true,
+	  Delta: true,    delta: true,
+	  Epsilon: 'E',   epsilon: true,  varepsilon: true,
+	  Zeta: 'Z',      zeta: true,
+	  Eta: 'H',       eta: true,
+	  Theta: true,    theta: true,    vartheta: true,
+	  Iota: 'I',      iota: true,
+	  Kappa: 'K',     kappa: true,    varkappa: true,
+	  Lambda: true,   lambda: true,
+	  Mu: 'M',        mu: true,
+	  Nu: 'N',        nu: true,
+	  Xi: true,       xi: true,
+	  Omicron: 'O',   omicron: true,
+	  Pi: true,       pi: true,       varpi: true,
+	  Rho: 'P',       rho: true,      varrho: true,
+	  Sigma: true,    sigma: true,    varsigma: true,
+	  Tau: 'T',       tau: true,
+	  Upsilon: true,  upsilon: true,
+	  Phi: true,      phi: true,      varphi: true,
+	  Chi: 'X',       chi: true,
+	  Psi: true,      psi: true,
+	  Omega: true,    omega: true
+	};
 
-	exports.createHash = __webpack_require__(261)
+	var dots = {
+	  dots: true,
+	  ldots: true,
+	  cdots: true,
+	  vdots: true,
+	  ddots: true,
+	  idots: true
+	};
 
-	exports.createHmac = __webpack_require__(262)
+	var logic = {
+	  'true': '\\mathrm{True}',
+	  'false': '\\mathrm{False}'
+	};
 
-	exports.randomBytes = function(size, callback) {
-	  if (callback && callback.call) {
-	    try {
-	      callback.call(this, undefined, new Buffer(rng(size)))
-	    } catch (err) { callback(err) }
-	  } else {
-	    return new Buffer(rng(size))
+	var other = {
+	  inf: '\\infty',
+	  Inf: '\\infty',
+	  infinity: '\\infty',
+	  Infinity: '\\infty',
+	  oo: '\\infty',
+	  lim: true,
+	  'undefined': '\\mathbf{?}'
+	};
+
+	// FUNCTIONS
+	var functions = {
+	  acos: '\\cos^{-1}',
+	  arccos: '\\cos^{-1}',
+	  cos: true,
+	  csc: true,
+	  csch: false,
+	  exp: true,
+	  ker: true,
+	  limsup: true,
+	  min: true,
+	  sinh: true,
+	  asin: '\\sin^{-1}',
+	  arcsin: '\\sin^{-1}',
+	  cosh: true,
+	  deg: true,
+	  gcd: true,
+	  lg: true,
+	  ln: true,
+	  Pr: true,
+	  sup: true,
+	  atan: '\\tan^{-1}',
+	  atan2: '\\tan2^{-1}',
+	  arctan: '\\tan^{-1}',
+	  cot: true,
+	  det: true,
+	  hom: true,
+	  log: true,
+	  log10: '\\log_{10}',
+	  sec: true,
+	  sech: false,
+	  tan: true,
+	  arg: true,
+	  coth: true,
+	  dim: true,
+	  inf: true,
+	  max: true,
+	  sin: true,
+	  tanh: true,
+
+	  fix: false,
+	  lcm: false,
+	  sign: false,
+	  xgcd: false,
+	  unary: false,
+
+	  // complex
+	  complex: false,
+	  conj: false,
+	  im: false,
+	  re: false,
+
+	  // matrix
+	  diag: false,
+	  resize: false,
+	  size: false,
+	  squeeze: false,
+	  subset: false,
+	  index: false,
+	  ones: false,
+	  zeros: false,
+	  range: false,
+
+	  // probability
+	  random: false,
+
+	  // statistics
+	  mean: '\\mu',
+	  median: false,
+	  prod: false,
+	  std: '\\sigma',
+	  'var': '\\sigma^2'
+	};
+
+	// CURLY FUNCTIONS
+	// wrap parameters with {}
+	var curlyFunctions = {
+	  sqrt: true,
+	  inv: true,
+	  int: '\\int',
+	  Int: '\\int',
+	  integrate: '\\int',
+	  eigenvalues: '\\lambda',
+	  liminf: true,
+	  lim: true,
+	  exp: 'e^',
+	  sum: true,
+
+	  eye: '\\mathbf{I}'
+	};
+
+	var operators = {
+	  '<=': '\\leq',
+	  '>=': '\\geq',
+	  '!=': '\\neq',
+	  'in': true,
+	  '*': '\\cdot',
+	  '/': '\\frac',
+	  'mod': '\\bmod',
+	  'to': '\\rightarrow'
+	};
+
+	var units = {
+	  deg: '^{\\circ}'
+	};
+
+	var symbols = {};
+
+	function mapSymbols() {
+	  var args = Array.prototype.slice.call(arguments),
+	      obj;
+	  for (var i = 0, len = args.length; i < len; i++) {
+	    obj = args[i];
+	    for (var key in obj) {
+	      if (obj.hasOwnProperty(key)) {
+	        symbols[key] = obj[key];
+	      }
+	    }
 	  }
 	}
 
-	function each(a, f) {
-	  for(var i in a)
-	    f(a[i], i)
+	mapSymbols(
+	  functions,
+	  curlyFunctions,
+	  greek,
+	  dots,
+	  logic,
+	  other
+	);
+
+	function latexIs(arr, value) {
+	  return typeof arr[value] !== 'undefined';
 	}
 
-	var p = __webpack_require__(263)(exports.createHmac)
-	exports.pbkdf2 = p.pbkdf2
-	exports.pbkdf2Sync = p.pbkdf2Sync
+	function latexIsFn(arr) {
+	  return function(value) {
+	    return latexIs(arr, value);
+	  };
+	}
 
+	function latexToFn(arr) {
+	  return function(value) {
+	    if (typeof arr[value] === 'boolean') {
+	      if (arr[value] === true) {
+	        value = '\\' + value;
+	      }
+	      else {
+	        value = '\\mathrm{' + value + '}';
+	      }
+	    }
+	    else if (typeof arr[value] === 'string') {
+	      value = arr[value];
+	    }
+	    else if (typeof value === 'string') {
+	      var index = value.indexOf('_');
+	      if (index !== -1) {
+	        value = exports.toSymbol(value.substring(0, index)) + '_{' +
+	            exports.toSymbol(value.substring(index+1)) + '}';
+	      }
+	    }
 
-	// the least I can do is make error messages for the rest of the node.js/crypto api.
-	each(['createCredentials'
-	, 'createCipher'
-	, 'createCipheriv'
-	, 'createDecipher'
-	, 'createDecipheriv'
-	, 'createSign'
-	, 'createVerify'
-	, 'createDiffieHellman'
-	], function (name) {
-	  exports[name] = function () {
-	    error('sorry,', name, 'is not implemented yet')
+	    return value;
+	  };
+	}
+
+	exports.isSymbol = latexIsFn(symbols);
+	exports.toSymbol = latexToFn(symbols);
+
+	exports.isFunction = latexIsFn(functions);
+	exports.toFunction = latexToFn(functions);
+
+	exports.isCurlyFunction = latexIsFn(curlyFunctions);
+	exports.toCurlyFunction = latexToFn(curlyFunctions);
+
+	exports.isOperator = latexIsFn(operators);
+	exports.toOperator = latexToFn(operators);
+
+	exports.isUnit = latexIsFn(units);
+	exports.toUnit = (function() {
+	  var _toUnit = latexToFn(units);
+
+	  return function(value, notSpaced) {
+	    if (exports.isUnit(value)) {
+	      return _toUnit(value);
+	    }
+
+	    return (notSpaced ? '' : '\\,') + '\\mathrm{' + value + '}';
+	  };
+	}());
+
+	exports.addBraces = function(s, brace, type) {
+	  if (brace === null) {
+	    return s;
 	  }
-	})
+
+	  var braces = ['', ''];
+	  type = type || 'normal';
+
+	  if (typeof brace === 'undefined' || brace === false) {
+	    braces = ['{', '}'];
+	  }
+	  else if (brace === true) {
+	    braces = ['(', ')'];
+	    type = 'lr';
+	  }
+	  else if (Array.isArray(brace) && brace.length === 2) {
+	    braces = brace;
+	  }
+	  else {
+	    braces = [brace, brace];
+	  }
+
+	  switch (type) {
+	    case 'normal':
+	    case false:
+	      return braces[0] + s + braces[1];
+
+	    case 'lr':
+	      return '\\left' + braces[0] + '{' + s + '}' + '\\right' + braces[1];
+
+	    case 'be':
+	      return '\\begin{' + braces[0] + '}' + s + '\\end{' + braces[1] + '}';
+	  }
+
+	  return braces[0] + s + braces[1];
+	};
+
+	exports.toParams = function(that) {
+	  var object = that.object,
+	      params = that.params,
+	      func = object.toTex(),
+	      texParams = null,
+	      brace = null,
+	      type = false,
+	      showFunc = false,
+	      prefix = '',
+	      suffix = '',
+	      op = null;
+
+	  switch (object.name) {
+	    // OPERATORS
+	    case 'add':
+	      op = '+';
+	      break;
+
+	    case 'subtract':
+	      op = '-';
+	      break;
+
+	    case 'larger':
+	      op = '>';
+	      break;
+
+	    case 'largereq':
+	      op = '>=';
+	      break;
+
+	    case 'smaller':
+	      op = '<';
+	      break;
+
+	    case 'smallereq':
+	      op = '<=';
+	      break;
+
+	    case 'unequal':
+	      op = '!=';
+	      break;
+
+	    case 'equal':
+	      op = '=';
+	      break;
+
+	    case 'mod':
+	      op = 'mod';
+	      break;
+
+	    case 'multiply':
+	      op = '*';
+	      break;
+
+	    case 'pow':
+	      op = '^';
+	      break;
+
+	    case 'concat':
+	      op = '||';
+	      break;
+
+	    case 'factorial':
+	      op = '!';
+	      break;
+
+	    case 'permutations':
+	      if (params.length === 1) {
+	        op = '!';
+	      }
+	      else {
+	        // op = 'P';
+	        var n = params[0].toTex(),
+	            k = params[1].toTex();
+	        return '\\frac{' + n + '!}{\\left(' + n + ' - ' + k + '\\right)!}';
+	      }
+	      break;
+
+	    // probability
+	    case 'combinations':
+	      op = '\\choose';
+	      break;
+
+	    // LR BRACES
+	    case 'abs':
+	      brace = '|';
+	      type = 'lr';
+	      break;
+
+	    case 'norm':
+	      brace = '\\|';
+	      type = 'lr';
+
+	      if (params.length === 2) {
+	        var tmp = params[1].toTex();
+
+	        if (tmp === '\\text{inf}') {
+	          tmp = '\\infty';
+	        }
+	        else if (tmp === '\\text{-inf}') {
+	          tmp = '{- \\infty}';
+	        }
+	        else if (tmp === '\\text{fro}') {
+	          tmp = 'F';
+	        }
+
+	        suffix = '_{' + tmp + '}';
+	        params = [params[0]];
+	      }
+	      break;
+
+	    case 'ceil':
+	      brace = ['\\lceil', '\\rceil'];
+	      type = 'lr';
+	      break;
+
+	    case 'floor':
+	      brace = ['\\lfloor', '\\rfloor'];
+	      type = 'lr';
+	      break;
+
+	    case 'round':
+	      brace = ['\\lfloor', '\\rceil'];
+	      type = 'lr';
+
+	      if (params.length === 2) {
+	        suffix = '_' + exports.addBraces(params[1].toTex());
+	        params = [params[0]];
+	      }
+	      break;
+
+
+	    // NORMAL BRACES
+	    case 'inv':
+	      suffix = '^{-1}';
+	      break;
+
+	    case 'transpose':
+	      suffix = '^{T}';
+	      brace = false;
+	      break;
+
+	    // SPECIAL NOTATION
+	    case 'log':
+	      var base = 'e';
+	      if (params.length === 2) {
+	        base = params[1].toTex();
+	        func = '\\log_{' + base + '}';
+	        params = [params[0]];
+	      }
+	      if (base === 'e') {
+	        func = '\\ln';
+	      }
+
+	      showFunc = true;
+	      break;
+
+	    case 'square':
+	      suffix = '^{2}';
+	      break;
+
+	    case 'cube':
+	      suffix = '^{3}';
+	      break;
+
+
+	    // MATRICES
+	    case 'eye':
+	      showFunc = true;
+	      brace = false;
+	      func += '_';
+	      break;
+
+	    case 'det':
+	      if (that.params[0] instanceof ArrayNode) {
+	        return that.params[0].toTex('vmatrix');
+	      }
+
+	      brace = 'vmatrix';
+	      type = 'be';
+	      break;
+
+	    default:
+	      showFunc = true;
+	      break;
+	  }
+
+	  if (op !== null) {
+	    brace = (op === '+' || op === '-');
+	    texParams = (new OperatorNode(op, object.name, params)).toTex();
+	  }
+	  else {
+	    op = ', ';
+	  }
+
+	  if (brace === null && !exports.isCurlyFunction(object.name)) {
+	    brace = true;
+	  }
+
+	  texParams = texParams || params.map(function(param) {
+	    return '{' + param.toTex() + '}'  ;
+	  }).join(op);
+
+	  return prefix + (showFunc ? func : '') +
+	      exports.addBraces(texParams, brace, type) +
+	      suffix;
+	};
 
 
 /***/ },
-/* 259 */
+/* 260 */
 /***/ function(module, exports, __webpack_require__) {
 
 	module.exports = function(module) {
@@ -22771,3011 +25056,6 @@ return /******/ (function(modules) { // webpackBootstrap
 			module.webpackPolyfill = 1;
 		}
 		return module;
-	}
-
-
-/***/ },
-/* 260 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/* WEBPACK VAR INJECTION */(function(Buffer) {// Original code adapted from Robert Kieffer.
-	// details at https://github.com/broofa/node-uuid
-
-
-	(function() {
-	  var _global = this;
-
-	  var mathRNG, whatwgRNG;
-
-	  // NOTE: Math.random() does not guarantee "cryptographic quality"
-	  mathRNG = function(size) {
-	    var bytes = new Buffer(size);
-	    var r;
-
-	    for (var i = 0, r; i < size; i++) {
-	      if ((i & 0x03) == 0) r = Math.random() * 0x100000000;
-	      bytes[i] = r >>> ((i & 0x03) << 3) & 0xff;
-	    }
-
-	    return bytes;
-	  }
-
-	  if (_global.crypto && crypto.getRandomValues) {
-	    whatwgRNG = function(size) {
-	      var bytes = new Buffer(size); //in browserify, this is an extended Uint8Array
-	      crypto.getRandomValues(bytes);
-	      return bytes;
-	    }
-	  }
-
-	  module.exports = whatwgRNG || mathRNG;
-
-	}())
-	
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(264).Buffer))
-
-/***/ },
-/* 261 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/* WEBPACK VAR INJECTION */(function(Buffer) {var createHash = __webpack_require__(266)
-
-	var md5 = toConstructor(__webpack_require__(265))
-
-	function toConstructor (fn) {
-	  return function () {
-	    var buffers = []
-	    var m= {
-	      update: function (data, enc) {
-	        if(!Buffer.isBuffer(data)) data = new Buffer(data, enc)
-	        buffers.push(data)
-	        return this
-	      },
-	      digest: function (enc) {
-	        var buf = Buffer.concat(buffers)
-	        var r = fn(buf)
-	        buffers = null
-	        return enc ? r.toString(enc) : r
-	      }
-	    }
-	    return m
-	  }
-	}
-
-	module.exports = function (alg) {
-	  if('md5' === alg) return new md5()
-	  return createHash(alg)
-	}
-	
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(264).Buffer))
-
-/***/ },
-/* 262 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/* WEBPACK VAR INJECTION */(function(Buffer) {var createHash = __webpack_require__(261)
-
-	var blocksize = 64
-	var zeroBuffer = new Buffer(blocksize); zeroBuffer.fill(0)
-
-	module.exports = Hmac
-
-	function Hmac (alg, key) {
-	  if(!(this instanceof Hmac)) return new Hmac(alg, key)
-	  this._opad = opad
-	  this._alg = alg
-
-	  key = this._key = !Buffer.isBuffer(key) ? new Buffer(key) : key
-
-	  if(key.length > blocksize) {
-	    key = createHash(alg).update(key).digest()
-	  } else if(key.length < blocksize) {
-	    key = Buffer.concat([key, zeroBuffer], blocksize)
-	  }
-
-	  var ipad = this._ipad = new Buffer(blocksize)
-	  var opad = this._opad = new Buffer(blocksize)
-
-	  for(var i = 0; i < blocksize; i++) {
-	    ipad[i] = key[i] ^ 0x36
-	    opad[i] = key[i] ^ 0x5C
-	  }
-
-	  this._hash = createHash(alg).update(ipad)
-	}
-
-	Hmac.prototype.update = function (data, enc) {
-	  this._hash.update(data, enc)
-	  return this
-	}
-
-	Hmac.prototype.digest = function (enc) {
-	  var h = this._hash.digest()
-	  return createHash(this._alg).update(this._opad).update(h).digest(enc)
-	}
-
-	
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(264).Buffer))
-
-/***/ },
-/* 263 */
-/***/ function(module, exports, __webpack_require__) {
-
-	// JavaScript PBKDF2 Implementation
-	// Based on http://git.io/qsv2zw
-	// Licensed under LGPL v3
-	// Copyright (c) 2013 jduncanator
-
-	var Buffer = __webpack_require__(264).Buffer
-
-	var blocksize = 64
-	var zeroBuffer = new Buffer(blocksize); zeroBuffer.fill(0)
-
-	module.exports = function (createHmac, exports) {
-	  exports = exports || {}
-
-	  exports.pbkdf2 = function(password, salt, iterations, keylen, cb) {
-	    if('function' !== typeof cb)
-	      throw new Error('No callback provided to pbkdf2');
-	    setTimeout(function () {
-	      cb(null, exports.pbkdf2Sync(password, salt, iterations, keylen))
-	    })
-	  }
-
-	  exports.pbkdf2Sync = function(key, salt, iterations, keylen) {
-	    if('number' !== typeof iterations)
-	      throw new TypeError('Iterations not a number')
-	    if(iterations < 0)
-	      throw new TypeError('Bad iterations')
-	    if('number' !== typeof keylen)
-	      throw new TypeError('Key length not a number')
-	    if(keylen < 0)
-	      throw new TypeError('Bad key length')
-
-	    //stretch key to the correct length that hmac wants it,
-	    //otherwise this will happen every time hmac is called
-	    //twice per iteration.
-	    var key = !Buffer.isBuffer(key) ? new Buffer(key) : key
-
-	    if(key.length > blocksize) {
-	      key = createHash(alg).update(key).digest()
-	    } else if(key.length < blocksize) {
-	      key = Buffer.concat([key, zeroBuffer], blocksize)
-	    }
-
-	    var HMAC;
-	    var cplen, p = 0, i = 1, itmp = new Buffer(4), digtmp;
-	    var out = new Buffer(keylen);
-	    out.fill(0);
-	    while(keylen) {
-	      if(keylen > 20)
-	        cplen = 20;
-	      else
-	        cplen = keylen;
-
-	      /* We are unlikely to ever use more than 256 blocks (5120 bits!)
-	         * but just in case...
-	         */
-	        itmp[0] = (i >> 24) & 0xff;
-	        itmp[1] = (i >> 16) & 0xff;
-	          itmp[2] = (i >> 8) & 0xff;
-	          itmp[3] = i & 0xff;
-
-	          HMAC = createHmac('sha1', key);
-	          HMAC.update(salt)
-	          HMAC.update(itmp);
-	        digtmp = HMAC.digest();
-	        digtmp.copy(out, p, 0, cplen);
-
-	        for(var j = 1; j < iterations; j++) {
-	          HMAC = createHmac('sha1', key);
-	          HMAC.update(digtmp);
-	          digtmp = HMAC.digest();
-	          for(var k = 0; k < cplen; k++) {
-	            out[k] ^= digtmp[k];
-	          }
-	        }
-	      keylen -= cplen;
-	      i++;
-	      p += cplen;
-	    }
-
-	    return out;
-	  }
-
-	  return exports
-	}
-
-
-/***/ },
-/* 264 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/* WEBPACK VAR INJECTION */(function(Buffer) {/*!
-	 * The buffer module from node.js, for the browser.
-	 *
-	 * @author   Feross Aboukhadijeh <feross@feross.org> <http://feross.org>
-	 * @license  MIT
-	 */
-
-	var base64 = __webpack_require__(272)
-	var ieee754 = __webpack_require__(268)
-
-	exports.Buffer = Buffer
-	exports.SlowBuffer = Buffer
-	exports.INSPECT_MAX_BYTES = 50
-	Buffer.poolSize = 8192
-
-	/**
-	 * If `Buffer._useTypedArrays`:
-	 *   === true    Use Uint8Array implementation (fastest)
-	 *   === false   Use Object implementation (compatible down to IE6)
-	 */
-	Buffer._useTypedArrays = (function () {
-	  // Detect if browser supports Typed Arrays. Supported browsers are IE 10+, Firefox 4+,
-	  // Chrome 7+, Safari 5.1+, Opera 11.6+, iOS 4.2+. If the browser does not support adding
-	  // properties to `Uint8Array` instances, then that's the same as no `Uint8Array` support
-	  // because we need to be able to add all the node Buffer API methods. This is an issue
-	  // in Firefox 4-29. Now fixed: https://bugzilla.mozilla.org/show_bug.cgi?id=695438
-	  try {
-	    var buf = new ArrayBuffer(0)
-	    var arr = new Uint8Array(buf)
-	    arr.foo = function () { return 42 }
-	    return 42 === arr.foo() &&
-	        typeof arr.subarray === 'function' // Chrome 9-10 lack `subarray`
-	  } catch (e) {
-	    return false
-	  }
-	})()
-
-	/**
-	 * Class: Buffer
-	 * =============
-	 *
-	 * The Buffer constructor returns instances of `Uint8Array` that are augmented
-	 * with function properties for all the node `Buffer` API functions. We use
-	 * `Uint8Array` so that square bracket notation works as expected -- it returns
-	 * a single octet.
-	 *
-	 * By augmenting the instances, we can avoid modifying the `Uint8Array`
-	 * prototype.
-	 */
-	function Buffer (subject, encoding, noZero) {
-	  if (!(this instanceof Buffer))
-	    return new Buffer(subject, encoding, noZero)
-
-	  var type = typeof subject
-
-	  // Workaround: node's base64 implementation allows for non-padded strings
-	  // while base64-js does not.
-	  if (encoding === 'base64' && type === 'string') {
-	    subject = stringtrim(subject)
-	    while (subject.length % 4 !== 0) {
-	      subject = subject + '='
-	    }
-	  }
-
-	  // Find the length
-	  var length
-	  if (type === 'number')
-	    length = coerce(subject)
-	  else if (type === 'string')
-	    length = Buffer.byteLength(subject, encoding)
-	  else if (type === 'object')
-	    length = coerce(subject.length) // assume that object is array-like
-	  else
-	    throw new Error('First argument needs to be a number, array or string.')
-
-	  var buf
-	  if (Buffer._useTypedArrays) {
-	    // Preferred: Return an augmented `Uint8Array` instance for best performance
-	    buf = Buffer._augment(new Uint8Array(length))
-	  } else {
-	    // Fallback: Return THIS instance of Buffer (created by `new`)
-	    buf = this
-	    buf.length = length
-	    buf._isBuffer = true
-	  }
-
-	  var i
-	  if (Buffer._useTypedArrays && typeof subject.byteLength === 'number') {
-	    // Speed optimization -- use set if we're copying from a typed array
-	    buf._set(subject)
-	  } else if (isArrayish(subject)) {
-	    // Treat array-ish objects as a byte array
-	    for (i = 0; i < length; i++) {
-	      if (Buffer.isBuffer(subject))
-	        buf[i] = subject.readUInt8(i)
-	      else
-	        buf[i] = subject[i]
-	    }
-	  } else if (type === 'string') {
-	    buf.write(subject, 0, encoding)
-	  } else if (type === 'number' && !Buffer._useTypedArrays && !noZero) {
-	    for (i = 0; i < length; i++) {
-	      buf[i] = 0
-	    }
-	  }
-
-	  return buf
-	}
-
-	// STATIC METHODS
-	// ==============
-
-	Buffer.isEncoding = function (encoding) {
-	  switch (String(encoding).toLowerCase()) {
-	    case 'hex':
-	    case 'utf8':
-	    case 'utf-8':
-	    case 'ascii':
-	    case 'binary':
-	    case 'base64':
-	    case 'raw':
-	    case 'ucs2':
-	    case 'ucs-2':
-	    case 'utf16le':
-	    case 'utf-16le':
-	      return true
-	    default:
-	      return false
-	  }
-	}
-
-	Buffer.isBuffer = function (b) {
-	  return !!(b !== null && b !== undefined && b._isBuffer)
-	}
-
-	Buffer.byteLength = function (str, encoding) {
-	  var ret
-	  str = str + ''
-	  switch (encoding || 'utf8') {
-	    case 'hex':
-	      ret = str.length / 2
-	      break
-	    case 'utf8':
-	    case 'utf-8':
-	      ret = utf8ToBytes(str).length
-	      break
-	    case 'ascii':
-	    case 'binary':
-	    case 'raw':
-	      ret = str.length
-	      break
-	    case 'base64':
-	      ret = base64ToBytes(str).length
-	      break
-	    case 'ucs2':
-	    case 'ucs-2':
-	    case 'utf16le':
-	    case 'utf-16le':
-	      ret = str.length * 2
-	      break
-	    default:
-	      throw new Error('Unknown encoding')
-	  }
-	  return ret
-	}
-
-	Buffer.concat = function (list, totalLength) {
-	  assert(isArray(list), 'Usage: Buffer.concat(list, [totalLength])\n' +
-	      'list should be an Array.')
-
-	  if (list.length === 0) {
-	    return new Buffer(0)
-	  } else if (list.length === 1) {
-	    return list[0]
-	  }
-
-	  var i
-	  if (typeof totalLength !== 'number') {
-	    totalLength = 0
-	    for (i = 0; i < list.length; i++) {
-	      totalLength += list[i].length
-	    }
-	  }
-
-	  var buf = new Buffer(totalLength)
-	  var pos = 0
-	  for (i = 0; i < list.length; i++) {
-	    var item = list[i]
-	    item.copy(buf, pos)
-	    pos += item.length
-	  }
-	  return buf
-	}
-
-	// BUFFER INSTANCE METHODS
-	// =======================
-
-	function _hexWrite (buf, string, offset, length) {
-	  offset = Number(offset) || 0
-	  var remaining = buf.length - offset
-	  if (!length) {
-	    length = remaining
-	  } else {
-	    length = Number(length)
-	    if (length > remaining) {
-	      length = remaining
-	    }
-	  }
-
-	  // must be an even number of digits
-	  var strLen = string.length
-	  assert(strLen % 2 === 0, 'Invalid hex string')
-
-	  if (length > strLen / 2) {
-	    length = strLen / 2
-	  }
-	  for (var i = 0; i < length; i++) {
-	    var byte = parseInt(string.substr(i * 2, 2), 16)
-	    assert(!isNaN(byte), 'Invalid hex string')
-	    buf[offset + i] = byte
-	  }
-	  Buffer._charsWritten = i * 2
-	  return i
-	}
-
-	function _utf8Write (buf, string, offset, length) {
-	  var charsWritten = Buffer._charsWritten =
-	    blitBuffer(utf8ToBytes(string), buf, offset, length)
-	  return charsWritten
-	}
-
-	function _asciiWrite (buf, string, offset, length) {
-	  var charsWritten = Buffer._charsWritten =
-	    blitBuffer(asciiToBytes(string), buf, offset, length)
-	  return charsWritten
-	}
-
-	function _binaryWrite (buf, string, offset, length) {
-	  return _asciiWrite(buf, string, offset, length)
-	}
-
-	function _base64Write (buf, string, offset, length) {
-	  var charsWritten = Buffer._charsWritten =
-	    blitBuffer(base64ToBytes(string), buf, offset, length)
-	  return charsWritten
-	}
-
-	function _utf16leWrite (buf, string, offset, length) {
-	  var charsWritten = Buffer._charsWritten =
-	    blitBuffer(utf16leToBytes(string), buf, offset, length)
-	  return charsWritten
-	}
-
-	Buffer.prototype.write = function (string, offset, length, encoding) {
-	  // Support both (string, offset, length, encoding)
-	  // and the legacy (string, encoding, offset, length)
-	  if (isFinite(offset)) {
-	    if (!isFinite(length)) {
-	      encoding = length
-	      length = undefined
-	    }
-	  } else {  // legacy
-	    var swap = encoding
-	    encoding = offset
-	    offset = length
-	    length = swap
-	  }
-
-	  offset = Number(offset) || 0
-	  var remaining = this.length - offset
-	  if (!length) {
-	    length = remaining
-	  } else {
-	    length = Number(length)
-	    if (length > remaining) {
-	      length = remaining
-	    }
-	  }
-	  encoding = String(encoding || 'utf8').toLowerCase()
-
-	  var ret
-	  switch (encoding) {
-	    case 'hex':
-	      ret = _hexWrite(this, string, offset, length)
-	      break
-	    case 'utf8':
-	    case 'utf-8':
-	      ret = _utf8Write(this, string, offset, length)
-	      break
-	    case 'ascii':
-	      ret = _asciiWrite(this, string, offset, length)
-	      break
-	    case 'binary':
-	      ret = _binaryWrite(this, string, offset, length)
-	      break
-	    case 'base64':
-	      ret = _base64Write(this, string, offset, length)
-	      break
-	    case 'ucs2':
-	    case 'ucs-2':
-	    case 'utf16le':
-	    case 'utf-16le':
-	      ret = _utf16leWrite(this, string, offset, length)
-	      break
-	    default:
-	      throw new Error('Unknown encoding')
-	  }
-	  return ret
-	}
-
-	Buffer.prototype.toString = function (encoding, start, end) {
-	  var self = this
-
-	  encoding = String(encoding || 'utf8').toLowerCase()
-	  start = Number(start) || 0
-	  end = (end !== undefined)
-	    ? Number(end)
-	    : end = self.length
-
-	  // Fastpath empty strings
-	  if (end === start)
-	    return ''
-
-	  var ret
-	  switch (encoding) {
-	    case 'hex':
-	      ret = _hexSlice(self, start, end)
-	      break
-	    case 'utf8':
-	    case 'utf-8':
-	      ret = _utf8Slice(self, start, end)
-	      break
-	    case 'ascii':
-	      ret = _asciiSlice(self, start, end)
-	      break
-	    case 'binary':
-	      ret = _binarySlice(self, start, end)
-	      break
-	    case 'base64':
-	      ret = _base64Slice(self, start, end)
-	      break
-	    case 'ucs2':
-	    case 'ucs-2':
-	    case 'utf16le':
-	    case 'utf-16le':
-	      ret = _utf16leSlice(self, start, end)
-	      break
-	    default:
-	      throw new Error('Unknown encoding')
-	  }
-	  return ret
-	}
-
-	Buffer.prototype.toJSON = function () {
-	  return {
-	    type: 'Buffer',
-	    data: Array.prototype.slice.call(this._arr || this, 0)
-	  }
-	}
-
-	// copy(targetBuffer, targetStart=0, sourceStart=0, sourceEnd=buffer.length)
-	Buffer.prototype.copy = function (target, target_start, start, end) {
-	  var source = this
-
-	  if (!start) start = 0
-	  if (!end && end !== 0) end = this.length
-	  if (!target_start) target_start = 0
-
-	  // Copy 0 bytes; we're done
-	  if (end === start) return
-	  if (target.length === 0 || source.length === 0) return
-
-	  // Fatal error conditions
-	  assert(end >= start, 'sourceEnd < sourceStart')
-	  assert(target_start >= 0 && target_start < target.length,
-	      'targetStart out of bounds')
-	  assert(start >= 0 && start < source.length, 'sourceStart out of bounds')
-	  assert(end >= 0 && end <= source.length, 'sourceEnd out of bounds')
-
-	  // Are we oob?
-	  if (end > this.length)
-	    end = this.length
-	  if (target.length - target_start < end - start)
-	    end = target.length - target_start + start
-
-	  var len = end - start
-
-	  if (len < 100 || !Buffer._useTypedArrays) {
-	    for (var i = 0; i < len; i++)
-	      target[i + target_start] = this[i + start]
-	  } else {
-	    target._set(this.subarray(start, start + len), target_start)
-	  }
-	}
-
-	function _base64Slice (buf, start, end) {
-	  if (start === 0 && end === buf.length) {
-	    return base64.fromByteArray(buf)
-	  } else {
-	    return base64.fromByteArray(buf.slice(start, end))
-	  }
-	}
-
-	function _utf8Slice (buf, start, end) {
-	  var res = ''
-	  var tmp = ''
-	  end = Math.min(buf.length, end)
-
-	  for (var i = start; i < end; i++) {
-	    if (buf[i] <= 0x7F) {
-	      res += decodeUtf8Char(tmp) + String.fromCharCode(buf[i])
-	      tmp = ''
-	    } else {
-	      tmp += '%' + buf[i].toString(16)
-	    }
-	  }
-
-	  return res + decodeUtf8Char(tmp)
-	}
-
-	function _asciiSlice (buf, start, end) {
-	  var ret = ''
-	  end = Math.min(buf.length, end)
-
-	  for (var i = start; i < end; i++)
-	    ret += String.fromCharCode(buf[i])
-	  return ret
-	}
-
-	function _binarySlice (buf, start, end) {
-	  return _asciiSlice(buf, start, end)
-	}
-
-	function _hexSlice (buf, start, end) {
-	  var len = buf.length
-
-	  if (!start || start < 0) start = 0
-	  if (!end || end < 0 || end > len) end = len
-
-	  var out = ''
-	  for (var i = start; i < end; i++) {
-	    out += toHex(buf[i])
-	  }
-	  return out
-	}
-
-	function _utf16leSlice (buf, start, end) {
-	  var bytes = buf.slice(start, end)
-	  var res = ''
-	  for (var i = 0; i < bytes.length; i += 2) {
-	    res += String.fromCharCode(bytes[i] + bytes[i+1] * 256)
-	  }
-	  return res
-	}
-
-	Buffer.prototype.slice = function (start, end) {
-	  var len = this.length
-	  start = clamp(start, len, 0)
-	  end = clamp(end, len, len)
-
-	  if (Buffer._useTypedArrays) {
-	    return Buffer._augment(this.subarray(start, end))
-	  } else {
-	    var sliceLen = end - start
-	    var newBuf = new Buffer(sliceLen, undefined, true)
-	    for (var i = 0; i < sliceLen; i++) {
-	      newBuf[i] = this[i + start]
-	    }
-	    return newBuf
-	  }
-	}
-
-	// `get` will be removed in Node 0.13+
-	Buffer.prototype.get = function (offset) {
-	  console.log('.get() is deprecated. Access using array indexes instead.')
-	  return this.readUInt8(offset)
-	}
-
-	// `set` will be removed in Node 0.13+
-	Buffer.prototype.set = function (v, offset) {
-	  console.log('.set() is deprecated. Access using array indexes instead.')
-	  return this.writeUInt8(v, offset)
-	}
-
-	Buffer.prototype.readUInt8 = function (offset, noAssert) {
-	  if (!noAssert) {
-	    assert(offset !== undefined && offset !== null, 'missing offset')
-	    assert(offset < this.length, 'Trying to read beyond buffer length')
-	  }
-
-	  if (offset >= this.length)
-	    return
-
-	  return this[offset]
-	}
-
-	function _readUInt16 (buf, offset, littleEndian, noAssert) {
-	  if (!noAssert) {
-	    assert(typeof littleEndian === 'boolean', 'missing or invalid endian')
-	    assert(offset !== undefined && offset !== null, 'missing offset')
-	    assert(offset + 1 < buf.length, 'Trying to read beyond buffer length')
-	  }
-
-	  var len = buf.length
-	  if (offset >= len)
-	    return
-
-	  var val
-	  if (littleEndian) {
-	    val = buf[offset]
-	    if (offset + 1 < len)
-	      val |= buf[offset + 1] << 8
-	  } else {
-	    val = buf[offset] << 8
-	    if (offset + 1 < len)
-	      val |= buf[offset + 1]
-	  }
-	  return val
-	}
-
-	Buffer.prototype.readUInt16LE = function (offset, noAssert) {
-	  return _readUInt16(this, offset, true, noAssert)
-	}
-
-	Buffer.prototype.readUInt16BE = function (offset, noAssert) {
-	  return _readUInt16(this, offset, false, noAssert)
-	}
-
-	function _readUInt32 (buf, offset, littleEndian, noAssert) {
-	  if (!noAssert) {
-	    assert(typeof littleEndian === 'boolean', 'missing or invalid endian')
-	    assert(offset !== undefined && offset !== null, 'missing offset')
-	    assert(offset + 3 < buf.length, 'Trying to read beyond buffer length')
-	  }
-
-	  var len = buf.length
-	  if (offset >= len)
-	    return
-
-	  var val
-	  if (littleEndian) {
-	    if (offset + 2 < len)
-	      val = buf[offset + 2] << 16
-	    if (offset + 1 < len)
-	      val |= buf[offset + 1] << 8
-	    val |= buf[offset]
-	    if (offset + 3 < len)
-	      val = val + (buf[offset + 3] << 24 >>> 0)
-	  } else {
-	    if (offset + 1 < len)
-	      val = buf[offset + 1] << 16
-	    if (offset + 2 < len)
-	      val |= buf[offset + 2] << 8
-	    if (offset + 3 < len)
-	      val |= buf[offset + 3]
-	    val = val + (buf[offset] << 24 >>> 0)
-	  }
-	  return val
-	}
-
-	Buffer.prototype.readUInt32LE = function (offset, noAssert) {
-	  return _readUInt32(this, offset, true, noAssert)
-	}
-
-	Buffer.prototype.readUInt32BE = function (offset, noAssert) {
-	  return _readUInt32(this, offset, false, noAssert)
-	}
-
-	Buffer.prototype.readInt8 = function (offset, noAssert) {
-	  if (!noAssert) {
-	    assert(offset !== undefined && offset !== null,
-	        'missing offset')
-	    assert(offset < this.length, 'Trying to read beyond buffer length')
-	  }
-
-	  if (offset >= this.length)
-	    return
-
-	  var neg = this[offset] & 0x80
-	  if (neg)
-	    return (0xff - this[offset] + 1) * -1
-	  else
-	    return this[offset]
-	}
-
-	function _readInt16 (buf, offset, littleEndian, noAssert) {
-	  if (!noAssert) {
-	    assert(typeof littleEndian === 'boolean', 'missing or invalid endian')
-	    assert(offset !== undefined && offset !== null, 'missing offset')
-	    assert(offset + 1 < buf.length, 'Trying to read beyond buffer length')
-	  }
-
-	  var len = buf.length
-	  if (offset >= len)
-	    return
-
-	  var val = _readUInt16(buf, offset, littleEndian, true)
-	  var neg = val & 0x8000
-	  if (neg)
-	    return (0xffff - val + 1) * -1
-	  else
-	    return val
-	}
-
-	Buffer.prototype.readInt16LE = function (offset, noAssert) {
-	  return _readInt16(this, offset, true, noAssert)
-	}
-
-	Buffer.prototype.readInt16BE = function (offset, noAssert) {
-	  return _readInt16(this, offset, false, noAssert)
-	}
-
-	function _readInt32 (buf, offset, littleEndian, noAssert) {
-	  if (!noAssert) {
-	    assert(typeof littleEndian === 'boolean', 'missing or invalid endian')
-	    assert(offset !== undefined && offset !== null, 'missing offset')
-	    assert(offset + 3 < buf.length, 'Trying to read beyond buffer length')
-	  }
-
-	  var len = buf.length
-	  if (offset >= len)
-	    return
-
-	  var val = _readUInt32(buf, offset, littleEndian, true)
-	  var neg = val & 0x80000000
-	  if (neg)
-	    return (0xffffffff - val + 1) * -1
-	  else
-	    return val
-	}
-
-	Buffer.prototype.readInt32LE = function (offset, noAssert) {
-	  return _readInt32(this, offset, true, noAssert)
-	}
-
-	Buffer.prototype.readInt32BE = function (offset, noAssert) {
-	  return _readInt32(this, offset, false, noAssert)
-	}
-
-	function _readFloat (buf, offset, littleEndian, noAssert) {
-	  if (!noAssert) {
-	    assert(typeof littleEndian === 'boolean', 'missing or invalid endian')
-	    assert(offset + 3 < buf.length, 'Trying to read beyond buffer length')
-	  }
-
-	  return ieee754.read(buf, offset, littleEndian, 23, 4)
-	}
-
-	Buffer.prototype.readFloatLE = function (offset, noAssert) {
-	  return _readFloat(this, offset, true, noAssert)
-	}
-
-	Buffer.prototype.readFloatBE = function (offset, noAssert) {
-	  return _readFloat(this, offset, false, noAssert)
-	}
-
-	function _readDouble (buf, offset, littleEndian, noAssert) {
-	  if (!noAssert) {
-	    assert(typeof littleEndian === 'boolean', 'missing or invalid endian')
-	    assert(offset + 7 < buf.length, 'Trying to read beyond buffer length')
-	  }
-
-	  return ieee754.read(buf, offset, littleEndian, 52, 8)
-	}
-
-	Buffer.prototype.readDoubleLE = function (offset, noAssert) {
-	  return _readDouble(this, offset, true, noAssert)
-	}
-
-	Buffer.prototype.readDoubleBE = function (offset, noAssert) {
-	  return _readDouble(this, offset, false, noAssert)
-	}
-
-	Buffer.prototype.writeUInt8 = function (value, offset, noAssert) {
-	  if (!noAssert) {
-	    assert(value !== undefined && value !== null, 'missing value')
-	    assert(offset !== undefined && offset !== null, 'missing offset')
-	    assert(offset < this.length, 'trying to write beyond buffer length')
-	    verifuint(value, 0xff)
-	  }
-
-	  if (offset >= this.length) return
-
-	  this[offset] = value
-	}
-
-	function _writeUInt16 (buf, value, offset, littleEndian, noAssert) {
-	  if (!noAssert) {
-	    assert(value !== undefined && value !== null, 'missing value')
-	    assert(typeof littleEndian === 'boolean', 'missing or invalid endian')
-	    assert(offset !== undefined && offset !== null, 'missing offset')
-	    assert(offset + 1 < buf.length, 'trying to write beyond buffer length')
-	    verifuint(value, 0xffff)
-	  }
-
-	  var len = buf.length
-	  if (offset >= len)
-	    return
-
-	  for (var i = 0, j = Math.min(len - offset, 2); i < j; i++) {
-	    buf[offset + i] =
-	        (value & (0xff << (8 * (littleEndian ? i : 1 - i)))) >>>
-	            (littleEndian ? i : 1 - i) * 8
-	  }
-	}
-
-	Buffer.prototype.writeUInt16LE = function (value, offset, noAssert) {
-	  _writeUInt16(this, value, offset, true, noAssert)
-	}
-
-	Buffer.prototype.writeUInt16BE = function (value, offset, noAssert) {
-	  _writeUInt16(this, value, offset, false, noAssert)
-	}
-
-	function _writeUInt32 (buf, value, offset, littleEndian, noAssert) {
-	  if (!noAssert) {
-	    assert(value !== undefined && value !== null, 'missing value')
-	    assert(typeof littleEndian === 'boolean', 'missing or invalid endian')
-	    assert(offset !== undefined && offset !== null, 'missing offset')
-	    assert(offset + 3 < buf.length, 'trying to write beyond buffer length')
-	    verifuint(value, 0xffffffff)
-	  }
-
-	  var len = buf.length
-	  if (offset >= len)
-	    return
-
-	  for (var i = 0, j = Math.min(len - offset, 4); i < j; i++) {
-	    buf[offset + i] =
-	        (value >>> (littleEndian ? i : 3 - i) * 8) & 0xff
-	  }
-	}
-
-	Buffer.prototype.writeUInt32LE = function (value, offset, noAssert) {
-	  _writeUInt32(this, value, offset, true, noAssert)
-	}
-
-	Buffer.prototype.writeUInt32BE = function (value, offset, noAssert) {
-	  _writeUInt32(this, value, offset, false, noAssert)
-	}
-
-	Buffer.prototype.writeInt8 = function (value, offset, noAssert) {
-	  if (!noAssert) {
-	    assert(value !== undefined && value !== null, 'missing value')
-	    assert(offset !== undefined && offset !== null, 'missing offset')
-	    assert(offset < this.length, 'Trying to write beyond buffer length')
-	    verifsint(value, 0x7f, -0x80)
-	  }
-
-	  if (offset >= this.length)
-	    return
-
-	  if (value >= 0)
-	    this.writeUInt8(value, offset, noAssert)
-	  else
-	    this.writeUInt8(0xff + value + 1, offset, noAssert)
-	}
-
-	function _writeInt16 (buf, value, offset, littleEndian, noAssert) {
-	  if (!noAssert) {
-	    assert(value !== undefined && value !== null, 'missing value')
-	    assert(typeof littleEndian === 'boolean', 'missing or invalid endian')
-	    assert(offset !== undefined && offset !== null, 'missing offset')
-	    assert(offset + 1 < buf.length, 'Trying to write beyond buffer length')
-	    verifsint(value, 0x7fff, -0x8000)
-	  }
-
-	  var len = buf.length
-	  if (offset >= len)
-	    return
-
-	  if (value >= 0)
-	    _writeUInt16(buf, value, offset, littleEndian, noAssert)
-	  else
-	    _writeUInt16(buf, 0xffff + value + 1, offset, littleEndian, noAssert)
-	}
-
-	Buffer.prototype.writeInt16LE = function (value, offset, noAssert) {
-	  _writeInt16(this, value, offset, true, noAssert)
-	}
-
-	Buffer.prototype.writeInt16BE = function (value, offset, noAssert) {
-	  _writeInt16(this, value, offset, false, noAssert)
-	}
-
-	function _writeInt32 (buf, value, offset, littleEndian, noAssert) {
-	  if (!noAssert) {
-	    assert(value !== undefined && value !== null, 'missing value')
-	    assert(typeof littleEndian === 'boolean', 'missing or invalid endian')
-	    assert(offset !== undefined && offset !== null, 'missing offset')
-	    assert(offset + 3 < buf.length, 'Trying to write beyond buffer length')
-	    verifsint(value, 0x7fffffff, -0x80000000)
-	  }
-
-	  var len = buf.length
-	  if (offset >= len)
-	    return
-
-	  if (value >= 0)
-	    _writeUInt32(buf, value, offset, littleEndian, noAssert)
-	  else
-	    _writeUInt32(buf, 0xffffffff + value + 1, offset, littleEndian, noAssert)
-	}
-
-	Buffer.prototype.writeInt32LE = function (value, offset, noAssert) {
-	  _writeInt32(this, value, offset, true, noAssert)
-	}
-
-	Buffer.prototype.writeInt32BE = function (value, offset, noAssert) {
-	  _writeInt32(this, value, offset, false, noAssert)
-	}
-
-	function _writeFloat (buf, value, offset, littleEndian, noAssert) {
-	  if (!noAssert) {
-	    assert(value !== undefined && value !== null, 'missing value')
-	    assert(typeof littleEndian === 'boolean', 'missing or invalid endian')
-	    assert(offset !== undefined && offset !== null, 'missing offset')
-	    assert(offset + 3 < buf.length, 'Trying to write beyond buffer length')
-	    verifIEEE754(value, 3.4028234663852886e+38, -3.4028234663852886e+38)
-	  }
-
-	  var len = buf.length
-	  if (offset >= len)
-	    return
-
-	  ieee754.write(buf, value, offset, littleEndian, 23, 4)
-	}
-
-	Buffer.prototype.writeFloatLE = function (value, offset, noAssert) {
-	  _writeFloat(this, value, offset, true, noAssert)
-	}
-
-	Buffer.prototype.writeFloatBE = function (value, offset, noAssert) {
-	  _writeFloat(this, value, offset, false, noAssert)
-	}
-
-	function _writeDouble (buf, value, offset, littleEndian, noAssert) {
-	  if (!noAssert) {
-	    assert(value !== undefined && value !== null, 'missing value')
-	    assert(typeof littleEndian === 'boolean', 'missing or invalid endian')
-	    assert(offset !== undefined && offset !== null, 'missing offset')
-	    assert(offset + 7 < buf.length,
-	        'Trying to write beyond buffer length')
-	    verifIEEE754(value, 1.7976931348623157E+308, -1.7976931348623157E+308)
-	  }
-
-	  var len = buf.length
-	  if (offset >= len)
-	    return
-
-	  ieee754.write(buf, value, offset, littleEndian, 52, 8)
-	}
-
-	Buffer.prototype.writeDoubleLE = function (value, offset, noAssert) {
-	  _writeDouble(this, value, offset, true, noAssert)
-	}
-
-	Buffer.prototype.writeDoubleBE = function (value, offset, noAssert) {
-	  _writeDouble(this, value, offset, false, noAssert)
-	}
-
-	// fill(value, start=0, end=buffer.length)
-	Buffer.prototype.fill = function (value, start, end) {
-	  if (!value) value = 0
-	  if (!start) start = 0
-	  if (!end) end = this.length
-
-	  if (typeof value === 'string') {
-	    value = value.charCodeAt(0)
-	  }
-
-	  assert(typeof value === 'number' && !isNaN(value), 'value is not a number')
-	  assert(end >= start, 'end < start')
-
-	  // Fill 0 bytes; we're done
-	  if (end === start) return
-	  if (this.length === 0) return
-
-	  assert(start >= 0 && start < this.length, 'start out of bounds')
-	  assert(end >= 0 && end <= this.length, 'end out of bounds')
-
-	  for (var i = start; i < end; i++) {
-	    this[i] = value
-	  }
-	}
-
-	Buffer.prototype.inspect = function () {
-	  var out = []
-	  var len = this.length
-	  for (var i = 0; i < len; i++) {
-	    out[i] = toHex(this[i])
-	    if (i === exports.INSPECT_MAX_BYTES) {
-	      out[i + 1] = '...'
-	      break
-	    }
-	  }
-	  return '<Buffer ' + out.join(' ') + '>'
-	}
-
-	/**
-	 * Creates a new `ArrayBuffer` with the *copied* memory of the buffer instance.
-	 * Added in Node 0.12. Only available in browsers that support ArrayBuffer.
-	 */
-	Buffer.prototype.toArrayBuffer = function () {
-	  if (typeof Uint8Array !== 'undefined') {
-	    if (Buffer._useTypedArrays) {
-	      return (new Buffer(this)).buffer
-	    } else {
-	      var buf = new Uint8Array(this.length)
-	      for (var i = 0, len = buf.length; i < len; i += 1)
-	        buf[i] = this[i]
-	      return buf.buffer
-	    }
-	  } else {
-	    throw new Error('Buffer.toArrayBuffer not supported in this browser')
-	  }
-	}
-
-	// HELPER FUNCTIONS
-	// ================
-
-	function stringtrim (str) {
-	  if (str.trim) return str.trim()
-	  return str.replace(/^\s+|\s+$/g, '')
-	}
-
-	var BP = Buffer.prototype
-
-	/**
-	 * Augment a Uint8Array *instance* (not the Uint8Array class!) with Buffer methods
-	 */
-	Buffer._augment = function (arr) {
-	  arr._isBuffer = true
-
-	  // save reference to original Uint8Array get/set methods before overwriting
-	  arr._get = arr.get
-	  arr._set = arr.set
-
-	  // deprecated, will be removed in node 0.13+
-	  arr.get = BP.get
-	  arr.set = BP.set
-
-	  arr.write = BP.write
-	  arr.toString = BP.toString
-	  arr.toLocaleString = BP.toString
-	  arr.toJSON = BP.toJSON
-	  arr.copy = BP.copy
-	  arr.slice = BP.slice
-	  arr.readUInt8 = BP.readUInt8
-	  arr.readUInt16LE = BP.readUInt16LE
-	  arr.readUInt16BE = BP.readUInt16BE
-	  arr.readUInt32LE = BP.readUInt32LE
-	  arr.readUInt32BE = BP.readUInt32BE
-	  arr.readInt8 = BP.readInt8
-	  arr.readInt16LE = BP.readInt16LE
-	  arr.readInt16BE = BP.readInt16BE
-	  arr.readInt32LE = BP.readInt32LE
-	  arr.readInt32BE = BP.readInt32BE
-	  arr.readFloatLE = BP.readFloatLE
-	  arr.readFloatBE = BP.readFloatBE
-	  arr.readDoubleLE = BP.readDoubleLE
-	  arr.readDoubleBE = BP.readDoubleBE
-	  arr.writeUInt8 = BP.writeUInt8
-	  arr.writeUInt16LE = BP.writeUInt16LE
-	  arr.writeUInt16BE = BP.writeUInt16BE
-	  arr.writeUInt32LE = BP.writeUInt32LE
-	  arr.writeUInt32BE = BP.writeUInt32BE
-	  arr.writeInt8 = BP.writeInt8
-	  arr.writeInt16LE = BP.writeInt16LE
-	  arr.writeInt16BE = BP.writeInt16BE
-	  arr.writeInt32LE = BP.writeInt32LE
-	  arr.writeInt32BE = BP.writeInt32BE
-	  arr.writeFloatLE = BP.writeFloatLE
-	  arr.writeFloatBE = BP.writeFloatBE
-	  arr.writeDoubleLE = BP.writeDoubleLE
-	  arr.writeDoubleBE = BP.writeDoubleBE
-	  arr.fill = BP.fill
-	  arr.inspect = BP.inspect
-	  arr.toArrayBuffer = BP.toArrayBuffer
-
-	  return arr
-	}
-
-	// slice(start, end)
-	function clamp (index, len, defaultValue) {
-	  if (typeof index !== 'number') return defaultValue
-	  index = ~~index;  // Coerce to integer.
-	  if (index >= len) return len
-	  if (index >= 0) return index
-	  index += len
-	  if (index >= 0) return index
-	  return 0
-	}
-
-	function coerce (length) {
-	  // Coerce length to a number (possibly NaN), round up
-	  // in case it's fractional (e.g. 123.456) then do a
-	  // double negate to coerce a NaN to 0. Easy, right?
-	  length = ~~Math.ceil(+length)
-	  return length < 0 ? 0 : length
-	}
-
-	function isArray (subject) {
-	  return (Array.isArray || function (subject) {
-	    return Object.prototype.toString.call(subject) === '[object Array]'
-	  })(subject)
-	}
-
-	function isArrayish (subject) {
-	  return isArray(subject) || Buffer.isBuffer(subject) ||
-	      subject && typeof subject === 'object' &&
-	      typeof subject.length === 'number'
-	}
-
-	function toHex (n) {
-	  if (n < 16) return '0' + n.toString(16)
-	  return n.toString(16)
-	}
-
-	function utf8ToBytes (str) {
-	  var byteArray = []
-	  for (var i = 0; i < str.length; i++) {
-	    var b = str.charCodeAt(i)
-	    if (b <= 0x7F)
-	      byteArray.push(str.charCodeAt(i))
-	    else {
-	      var start = i
-	      if (b >= 0xD800 && b <= 0xDFFF) i++
-	      var h = encodeURIComponent(str.slice(start, i+1)).substr(1).split('%')
-	      for (var j = 0; j < h.length; j++)
-	        byteArray.push(parseInt(h[j], 16))
-	    }
-	  }
-	  return byteArray
-	}
-
-	function asciiToBytes (str) {
-	  var byteArray = []
-	  for (var i = 0; i < str.length; i++) {
-	    // Node's code seems to be doing this and not & 0x7F..
-	    byteArray.push(str.charCodeAt(i) & 0xFF)
-	  }
-	  return byteArray
-	}
-
-	function utf16leToBytes (str) {
-	  var c, hi, lo
-	  var byteArray = []
-	  for (var i = 0; i < str.length; i++) {
-	    c = str.charCodeAt(i)
-	    hi = c >> 8
-	    lo = c % 256
-	    byteArray.push(lo)
-	    byteArray.push(hi)
-	  }
-
-	  return byteArray
-	}
-
-	function base64ToBytes (str) {
-	  return base64.toByteArray(str)
-	}
-
-	function blitBuffer (src, dst, offset, length) {
-	  var pos
-	  for (var i = 0; i < length; i++) {
-	    if ((i + offset >= dst.length) || (i >= src.length))
-	      break
-	    dst[i + offset] = src[i]
-	  }
-	  return i
-	}
-
-	function decodeUtf8Char (str) {
-	  try {
-	    return decodeURIComponent(str)
-	  } catch (err) {
-	    return String.fromCharCode(0xFFFD) // UTF 8 invalid char
-	  }
-	}
-
-	/*
-	 * We have to make sure that the value is a valid integer. This means that it
-	 * is non-negative. It has no fractional component and that it does not
-	 * exceed the maximum allowed value.
-	 */
-	function verifuint (value, max) {
-	  assert(typeof value === 'number', 'cannot write a non-number as a number')
-	  assert(value >= 0, 'specified a negative value for writing an unsigned value')
-	  assert(value <= max, 'value is larger than maximum value for type')
-	  assert(Math.floor(value) === value, 'value has a fractional component')
-	}
-
-	function verifsint (value, max, min) {
-	  assert(typeof value === 'number', 'cannot write a non-number as a number')
-	  assert(value <= max, 'value larger than maximum allowed value')
-	  assert(value >= min, 'value smaller than minimum allowed value')
-	  assert(Math.floor(value) === value, 'value has a fractional component')
-	}
-
-	function verifIEEE754 (value, max, min) {
-	  assert(typeof value === 'number', 'cannot write a non-number as a number')
-	  assert(value <= max, 'value larger than maximum allowed value')
-	  assert(value >= min, 'value smaller than minimum allowed value')
-	}
-
-	function assert (test, message) {
-	  if (!test) throw new Error(message || 'Failed assertion')
-	}
-	
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(264).Buffer))
-
-/***/ },
-/* 265 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/*
-	 * A JavaScript implementation of the RSA Data Security, Inc. MD5 Message
-	 * Digest Algorithm, as defined in RFC 1321.
-	 * Version 2.1 Copyright (C) Paul Johnston 1999 - 2002.
-	 * Other contributors: Greg Holt, Andrew Kepert, Ydnar, Lostinet
-	 * Distributed under the BSD License
-	 * See http://pajhome.org.uk/crypt/md5 for more info.
-	 */
-
-	var helpers = __webpack_require__(267);
-
-	/*
-	 * Perform a simple self-test to see if the VM is working
-	 */
-	function md5_vm_test()
-	{
-	  return hex_md5("abc") == "900150983cd24fb0d6963f7d28e17f72";
-	}
-
-	/*
-	 * Calculate the MD5 of an array of little-endian words, and a bit length
-	 */
-	function core_md5(x, len)
-	{
-	  /* append padding */
-	  x[len >> 5] |= 0x80 << ((len) % 32);
-	  x[(((len + 64) >>> 9) << 4) + 14] = len;
-
-	  var a =  1732584193;
-	  var b = -271733879;
-	  var c = -1732584194;
-	  var d =  271733878;
-
-	  for(var i = 0; i < x.length; i += 16)
-	  {
-	    var olda = a;
-	    var oldb = b;
-	    var oldc = c;
-	    var oldd = d;
-
-	    a = md5_ff(a, b, c, d, x[i+ 0], 7 , -680876936);
-	    d = md5_ff(d, a, b, c, x[i+ 1], 12, -389564586);
-	    c = md5_ff(c, d, a, b, x[i+ 2], 17,  606105819);
-	    b = md5_ff(b, c, d, a, x[i+ 3], 22, -1044525330);
-	    a = md5_ff(a, b, c, d, x[i+ 4], 7 , -176418897);
-	    d = md5_ff(d, a, b, c, x[i+ 5], 12,  1200080426);
-	    c = md5_ff(c, d, a, b, x[i+ 6], 17, -1473231341);
-	    b = md5_ff(b, c, d, a, x[i+ 7], 22, -45705983);
-	    a = md5_ff(a, b, c, d, x[i+ 8], 7 ,  1770035416);
-	    d = md5_ff(d, a, b, c, x[i+ 9], 12, -1958414417);
-	    c = md5_ff(c, d, a, b, x[i+10], 17, -42063);
-	    b = md5_ff(b, c, d, a, x[i+11], 22, -1990404162);
-	    a = md5_ff(a, b, c, d, x[i+12], 7 ,  1804603682);
-	    d = md5_ff(d, a, b, c, x[i+13], 12, -40341101);
-	    c = md5_ff(c, d, a, b, x[i+14], 17, -1502002290);
-	    b = md5_ff(b, c, d, a, x[i+15], 22,  1236535329);
-
-	    a = md5_gg(a, b, c, d, x[i+ 1], 5 , -165796510);
-	    d = md5_gg(d, a, b, c, x[i+ 6], 9 , -1069501632);
-	    c = md5_gg(c, d, a, b, x[i+11], 14,  643717713);
-	    b = md5_gg(b, c, d, a, x[i+ 0], 20, -373897302);
-	    a = md5_gg(a, b, c, d, x[i+ 5], 5 , -701558691);
-	    d = md5_gg(d, a, b, c, x[i+10], 9 ,  38016083);
-	    c = md5_gg(c, d, a, b, x[i+15], 14, -660478335);
-	    b = md5_gg(b, c, d, a, x[i+ 4], 20, -405537848);
-	    a = md5_gg(a, b, c, d, x[i+ 9], 5 ,  568446438);
-	    d = md5_gg(d, a, b, c, x[i+14], 9 , -1019803690);
-	    c = md5_gg(c, d, a, b, x[i+ 3], 14, -187363961);
-	    b = md5_gg(b, c, d, a, x[i+ 8], 20,  1163531501);
-	    a = md5_gg(a, b, c, d, x[i+13], 5 , -1444681467);
-	    d = md5_gg(d, a, b, c, x[i+ 2], 9 , -51403784);
-	    c = md5_gg(c, d, a, b, x[i+ 7], 14,  1735328473);
-	    b = md5_gg(b, c, d, a, x[i+12], 20, -1926607734);
-
-	    a = md5_hh(a, b, c, d, x[i+ 5], 4 , -378558);
-	    d = md5_hh(d, a, b, c, x[i+ 8], 11, -2022574463);
-	    c = md5_hh(c, d, a, b, x[i+11], 16,  1839030562);
-	    b = md5_hh(b, c, d, a, x[i+14], 23, -35309556);
-	    a = md5_hh(a, b, c, d, x[i+ 1], 4 , -1530992060);
-	    d = md5_hh(d, a, b, c, x[i+ 4], 11,  1272893353);
-	    c = md5_hh(c, d, a, b, x[i+ 7], 16, -155497632);
-	    b = md5_hh(b, c, d, a, x[i+10], 23, -1094730640);
-	    a = md5_hh(a, b, c, d, x[i+13], 4 ,  681279174);
-	    d = md5_hh(d, a, b, c, x[i+ 0], 11, -358537222);
-	    c = md5_hh(c, d, a, b, x[i+ 3], 16, -722521979);
-	    b = md5_hh(b, c, d, a, x[i+ 6], 23,  76029189);
-	    a = md5_hh(a, b, c, d, x[i+ 9], 4 , -640364487);
-	    d = md5_hh(d, a, b, c, x[i+12], 11, -421815835);
-	    c = md5_hh(c, d, a, b, x[i+15], 16,  530742520);
-	    b = md5_hh(b, c, d, a, x[i+ 2], 23, -995338651);
-
-	    a = md5_ii(a, b, c, d, x[i+ 0], 6 , -198630844);
-	    d = md5_ii(d, a, b, c, x[i+ 7], 10,  1126891415);
-	    c = md5_ii(c, d, a, b, x[i+14], 15, -1416354905);
-	    b = md5_ii(b, c, d, a, x[i+ 5], 21, -57434055);
-	    a = md5_ii(a, b, c, d, x[i+12], 6 ,  1700485571);
-	    d = md5_ii(d, a, b, c, x[i+ 3], 10, -1894986606);
-	    c = md5_ii(c, d, a, b, x[i+10], 15, -1051523);
-	    b = md5_ii(b, c, d, a, x[i+ 1], 21, -2054922799);
-	    a = md5_ii(a, b, c, d, x[i+ 8], 6 ,  1873313359);
-	    d = md5_ii(d, a, b, c, x[i+15], 10, -30611744);
-	    c = md5_ii(c, d, a, b, x[i+ 6], 15, -1560198380);
-	    b = md5_ii(b, c, d, a, x[i+13], 21,  1309151649);
-	    a = md5_ii(a, b, c, d, x[i+ 4], 6 , -145523070);
-	    d = md5_ii(d, a, b, c, x[i+11], 10, -1120210379);
-	    c = md5_ii(c, d, a, b, x[i+ 2], 15,  718787259);
-	    b = md5_ii(b, c, d, a, x[i+ 9], 21, -343485551);
-
-	    a = safe_add(a, olda);
-	    b = safe_add(b, oldb);
-	    c = safe_add(c, oldc);
-	    d = safe_add(d, oldd);
-	  }
-	  return Array(a, b, c, d);
-
-	}
-
-	/*
-	 * These functions implement the four basic operations the algorithm uses.
-	 */
-	function md5_cmn(q, a, b, x, s, t)
-	{
-	  return safe_add(bit_rol(safe_add(safe_add(a, q), safe_add(x, t)), s),b);
-	}
-	function md5_ff(a, b, c, d, x, s, t)
-	{
-	  return md5_cmn((b & c) | ((~b) & d), a, b, x, s, t);
-	}
-	function md5_gg(a, b, c, d, x, s, t)
-	{
-	  return md5_cmn((b & d) | (c & (~d)), a, b, x, s, t);
-	}
-	function md5_hh(a, b, c, d, x, s, t)
-	{
-	  return md5_cmn(b ^ c ^ d, a, b, x, s, t);
-	}
-	function md5_ii(a, b, c, d, x, s, t)
-	{
-	  return md5_cmn(c ^ (b | (~d)), a, b, x, s, t);
-	}
-
-	/*
-	 * Add integers, wrapping at 2^32. This uses 16-bit operations internally
-	 * to work around bugs in some JS interpreters.
-	 */
-	function safe_add(x, y)
-	{
-	  var lsw = (x & 0xFFFF) + (y & 0xFFFF);
-	  var msw = (x >> 16) + (y >> 16) + (lsw >> 16);
-	  return (msw << 16) | (lsw & 0xFFFF);
-	}
-
-	/*
-	 * Bitwise rotate a 32-bit number to the left.
-	 */
-	function bit_rol(num, cnt)
-	{
-	  return (num << cnt) | (num >>> (32 - cnt));
-	}
-
-	module.exports = function md5(buf) {
-	  return helpers.hash(buf, core_md5, 16);
-	};
-
-
-/***/ },
-/* 266 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var exports = module.exports = function (alg) {
-	  var Alg = exports[alg]
-	  if(!Alg) throw new Error(alg + ' is not supported (we accept pull requests)')
-	  return new Alg()
-	}
-
-	var Buffer = __webpack_require__(264).Buffer
-	var Hash   = __webpack_require__(269)(Buffer)
-
-	exports.sha =
-	exports.sha1 = __webpack_require__(270)(Buffer, Hash)
-	exports.sha256 = __webpack_require__(271)(Buffer, Hash)
-
-
-/***/ },
-/* 267 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var Buffer = __webpack_require__(264).Buffer;
-	var intSize = 4;
-	var zeroBuffer = new Buffer(intSize); zeroBuffer.fill(0);
-	var chrsz = 8;
-
-	function toArray(buf, bigEndian) {
-	  if ((buf.length % intSize) !== 0) {
-	    var len = buf.length + (intSize - (buf.length % intSize));
-	    buf = Buffer.concat([buf, zeroBuffer], len);
-	  }
-
-	  var arr = [];
-	  var fn = bigEndian ? buf.readInt32BE : buf.readInt32LE;
-	  for (var i = 0; i < buf.length; i += intSize) {
-	    arr.push(fn.call(buf, i));
-	  }
-	  return arr;
-	}
-
-	function toBuffer(arr, size, bigEndian) {
-	  var buf = new Buffer(size);
-	  var fn = bigEndian ? buf.writeInt32BE : buf.writeInt32LE;
-	  for (var i = 0; i < arr.length; i++) {
-	    fn.call(buf, arr[i], i * 4, true);
-	  }
-	  return buf;
-	}
-
-	function hash(buf, fn, hashSize, bigEndian) {
-	  if (!Buffer.isBuffer(buf)) buf = new Buffer(buf);
-	  var arr = fn(toArray(buf, bigEndian), buf.length * chrsz);
-	  return toBuffer(arr, hashSize, bigEndian);
-	}
-
-	module.exports = { hash: hash };
-
-
-/***/ },
-/* 268 */
-/***/ function(module, exports, __webpack_require__) {
-
-	exports.read = function(buffer, offset, isLE, mLen, nBytes) {
-	  var e, m,
-	      eLen = nBytes * 8 - mLen - 1,
-	      eMax = (1 << eLen) - 1,
-	      eBias = eMax >> 1,
-	      nBits = -7,
-	      i = isLE ? (nBytes - 1) : 0,
-	      d = isLE ? -1 : 1,
-	      s = buffer[offset + i];
-
-	  i += d;
-
-	  e = s & ((1 << (-nBits)) - 1);
-	  s >>= (-nBits);
-	  nBits += eLen;
-	  for (; nBits > 0; e = e * 256 + buffer[offset + i], i += d, nBits -= 8);
-
-	  m = e & ((1 << (-nBits)) - 1);
-	  e >>= (-nBits);
-	  nBits += mLen;
-	  for (; nBits > 0; m = m * 256 + buffer[offset + i], i += d, nBits -= 8);
-
-	  if (e === 0) {
-	    e = 1 - eBias;
-	  } else if (e === eMax) {
-	    return m ? NaN : ((s ? -1 : 1) * Infinity);
-	  } else {
-	    m = m + Math.pow(2, mLen);
-	    e = e - eBias;
-	  }
-	  return (s ? -1 : 1) * m * Math.pow(2, e - mLen);
-	};
-
-	exports.write = function(buffer, value, offset, isLE, mLen, nBytes) {
-	  var e, m, c,
-	      eLen = nBytes * 8 - mLen - 1,
-	      eMax = (1 << eLen) - 1,
-	      eBias = eMax >> 1,
-	      rt = (mLen === 23 ? Math.pow(2, -24) - Math.pow(2, -77) : 0),
-	      i = isLE ? 0 : (nBytes - 1),
-	      d = isLE ? 1 : -1,
-	      s = value < 0 || (value === 0 && 1 / value < 0) ? 1 : 0;
-
-	  value = Math.abs(value);
-
-	  if (isNaN(value) || value === Infinity) {
-	    m = isNaN(value) ? 1 : 0;
-	    e = eMax;
-	  } else {
-	    e = Math.floor(Math.log(value) / Math.LN2);
-	    if (value * (c = Math.pow(2, -e)) < 1) {
-	      e--;
-	      c *= 2;
-	    }
-	    if (e + eBias >= 1) {
-	      value += rt / c;
-	    } else {
-	      value += rt * Math.pow(2, 1 - eBias);
-	    }
-	    if (value * c >= 2) {
-	      e++;
-	      c /= 2;
-	    }
-
-	    if (e + eBias >= eMax) {
-	      m = 0;
-	      e = eMax;
-	    } else if (e + eBias >= 1) {
-	      m = (value * c - 1) * Math.pow(2, mLen);
-	      e = e + eBias;
-	    } else {
-	      m = value * Math.pow(2, eBias - 1) * Math.pow(2, mLen);
-	      e = 0;
-	    }
-	  }
-
-	  for (; mLen >= 8; buffer[offset + i] = m & 0xff, i += d, m /= 256, mLen -= 8);
-
-	  e = (e << mLen) | m;
-	  eLen += mLen;
-	  for (; eLen > 0; buffer[offset + i] = e & 0xff, i += d, e /= 256, eLen -= 8);
-
-	  buffer[offset + i - d] |= s * 128;
-	};
-
-
-/***/ },
-/* 269 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var u = __webpack_require__(273)
-	var write = u.write
-	var fill = u.zeroFill
-
-	module.exports = function (Buffer) {
-
-	  //prototype class for hash functions
-	  function Hash (blockSize, finalSize) {
-	    this._block = new Buffer(blockSize) //new Uint32Array(blockSize/4)
-	    this._finalSize = finalSize
-	    this._blockSize = blockSize
-	    this._len = 0
-	    this._s = 0
-	  }
-
-	  Hash.prototype.init = function () {
-	    this._s = 0
-	    this._len = 0
-	  }
-
-	  function lengthOf(data, enc) {
-	    if(enc == null)     return data.byteLength || data.length
-	    if(enc == 'ascii' || enc == 'binary')  return data.length
-	    if(enc == 'hex')    return data.length/2
-	    if(enc == 'base64') return data.length/3
-	  }
-
-	  Hash.prototype.update = function (data, enc) {
-	    var bl = this._blockSize
-
-	    //I'd rather do this with a streaming encoder, like the opposite of
-	    //http://nodejs.org/api/string_decoder.html
-	    var length
-	      if(!enc && 'string' === typeof data)
-	        enc = 'utf8'
-
-	    if(enc) {
-	      if(enc === 'utf-8')
-	        enc = 'utf8'
-
-	      if(enc === 'base64' || enc === 'utf8')
-	        data = new Buffer(data, enc), enc = null
-
-	      length = lengthOf(data, enc)
-	    } else
-	      length = data.byteLength || data.length
-
-	    var l = this._len += length
-	    var s = this._s = (this._s || 0)
-	    var f = 0
-	    var buffer = this._block
-	    while(s < l) {
-	      var t = Math.min(length, f + bl)
-	      write(buffer, data, enc, s%bl, f, t)
-	      var ch = (t - f);
-	      s += ch; f += ch
-
-	      if(!(s%bl))
-	        this._update(buffer)
-	    }
-	    this._s = s
-
-	    return this
-
-	  }
-
-	  Hash.prototype.digest = function (enc) {
-	    var bl = this._blockSize
-	    var fl = this._finalSize
-	    var len = this._len*8
-
-	    var x = this._block
-
-	    var bits = len % (bl*8)
-
-	    //add end marker, so that appending 0's creats a different hash.
-	    x[this._len % bl] = 0x80
-	    fill(this._block, this._len % bl + 1)
-
-	    if(bits >= fl*8) {
-	      this._update(this._block)
-	      u.zeroFill(this._block, 0)
-	    }
-
-	    //TODO: handle case where the bit length is > Math.pow(2, 29)
-	    x.writeInt32BE(len, fl + 4) //big endian
-
-	    var hash = this._update(this._block) || this._hash()
-	    if(enc == null) return hash
-	    return hash.toString(enc)
-	  }
-
-	  Hash.prototype._update = function () {
-	    throw new Error('_update must be implemented by subclass')
-	  }
-
-	  return Hash
-	}
-
-
-/***/ },
-/* 270 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/*
-	 * A JavaScript implementation of the Secure Hash Algorithm, SHA-1, as defined
-	 * in FIPS PUB 180-1
-	 * Version 2.1a Copyright Paul Johnston 2000 - 2002.
-	 * Other contributors: Greg Holt, Andrew Kepert, Ydnar, Lostinet
-	 * Distributed under the BSD License
-	 * See http://pajhome.org.uk/crypt/md5 for details.
-	 */
-	module.exports = function (Buffer, Hash) {
-
-	  var inherits = __webpack_require__(275).inherits
-
-	  inherits(Sha1, Hash)
-
-	  var A = 0|0
-	  var B = 4|0
-	  var C = 8|0
-	  var D = 12|0
-	  var E = 16|0
-
-	  var BE = false
-	  var LE = true
-
-	  var W = new Int32Array(80)
-
-	  var POOL = []
-
-	  function Sha1 () {
-	    if(POOL.length)
-	      return POOL.pop().init()
-
-	    if(!(this instanceof Sha1)) return new Sha1()
-	    this._w = W
-	    Hash.call(this, 16*4, 14*4)
-	  
-	    this._h = null
-	    this.init()
-	  }
-
-	  Sha1.prototype.init = function () {
-	    this._a = 0x67452301
-	    this._b = 0xefcdab89
-	    this._c = 0x98badcfe
-	    this._d = 0x10325476
-	    this._e = 0xc3d2e1f0
-
-	    Hash.prototype.init.call(this)
-	    return this
-	  }
-
-	  Sha1.prototype._POOL = POOL
-
-	  // assume that array is a Uint32Array with length=16,
-	  // and that if it is the last block, it already has the length and the 1 bit appended.
-
-
-	  var isDV = new Buffer(1) instanceof DataView
-	  function readInt32BE (X, i) {
-	    return isDV
-	      ? X.getInt32(i, false)
-	      : X.readInt32BE(i)
-	  }
-
-	  Sha1.prototype._update = function (array) {
-
-	    var X = this._block
-	    var h = this._h
-	    var a, b, c, d, e, _a, _b, _c, _d, _e
-
-	    a = _a = this._a
-	    b = _b = this._b
-	    c = _c = this._c
-	    d = _d = this._d
-	    e = _e = this._e
-
-	    var w = this._w
-
-	    for(var j = 0; j < 80; j++) {
-	      var W = w[j]
-	        = j < 16
-	        //? X.getInt32(j*4, false)
-	        //? readInt32BE(X, j*4) //*/ X.readInt32BE(j*4) //*/
-	        ? X.readInt32BE(j*4)
-	        : rol(w[j - 3] ^ w[j -  8] ^ w[j - 14] ^ w[j - 16], 1)
-
-	      var t =
-	        add(
-	          add(rol(a, 5), sha1_ft(j, b, c, d)),
-	          add(add(e, W), sha1_kt(j))
-	        );
-
-	      e = d
-	      d = c
-	      c = rol(b, 30)
-	      b = a
-	      a = t
-	    }
-
-	    this._a = add(a, _a)
-	    this._b = add(b, _b)
-	    this._c = add(c, _c)
-	    this._d = add(d, _d)
-	    this._e = add(e, _e)
-	  }
-
-	  Sha1.prototype._hash = function () {
-	    if(POOL.length < 100) POOL.push(this)
-	    var H = new Buffer(20)
-	    //console.log(this._a|0, this._b|0, this._c|0, this._d|0, this._e|0)
-	    H.writeInt32BE(this._a|0, A)
-	    H.writeInt32BE(this._b|0, B)
-	    H.writeInt32BE(this._c|0, C)
-	    H.writeInt32BE(this._d|0, D)
-	    H.writeInt32BE(this._e|0, E)
-	    return H
-	  }
-
-	  /*
-	   * Perform the appropriate triplet combination function for the current
-	   * iteration
-	   */
-	  function sha1_ft(t, b, c, d) {
-	    if(t < 20) return (b & c) | ((~b) & d);
-	    if(t < 40) return b ^ c ^ d;
-	    if(t < 60) return (b & c) | (b & d) | (c & d);
-	    return b ^ c ^ d;
-	  }
-
-	  /*
-	   * Determine the appropriate additive constant for the current iteration
-	   */
-	  function sha1_kt(t) {
-	    return (t < 20) ?  1518500249 : (t < 40) ?  1859775393 :
-	           (t < 60) ? -1894007588 : -899497514;
-	  }
-
-	  /*
-	   * Add integers, wrapping at 2^32. This uses 16-bit operations internally
-	   * to work around bugs in some JS interpreters.
-	   * //dominictarr: this is 10 years old, so maybe this can be dropped?)
-	   *
-	   */
-	  function add(x, y) {
-	    return (x + y ) | 0
-	  //lets see how this goes on testling.
-	  //  var lsw = (x & 0xFFFF) + (y & 0xFFFF);
-	  //  var msw = (x >> 16) + (y >> 16) + (lsw >> 16);
-	  //  return (msw << 16) | (lsw & 0xFFFF);
-	  }
-
-	  /*
-	   * Bitwise rotate a 32-bit number to the left.
-	   */
-	  function rol(num, cnt) {
-	    return (num << cnt) | (num >>> (32 - cnt));
-	  }
-
-	  return Sha1
-	}
-
-
-/***/ },
-/* 271 */
-/***/ function(module, exports, __webpack_require__) {
-
-	
-	/**
-	 * A JavaScript implementation of the Secure Hash Algorithm, SHA-256, as defined
-	 * in FIPS 180-2
-	 * Version 2.2-beta Copyright Angel Marin, Paul Johnston 2000 - 2009.
-	 * Other contributors: Greg Holt, Andrew Kepert, Ydnar, Lostinet
-	 *
-	 */
-
-	var inherits = __webpack_require__(275).inherits
-	var BE       = false
-	var LE       = true
-	var hexpp    = __webpack_require__(274)
-	var u        = __webpack_require__(273)
-
-	module.exports = function (Buffer, Hash) {
-
-	  var K = [
-	      0x428A2F98, 0x71374491, 0xB5C0FBCF, 0xE9B5DBA5,
-	      0x3956C25B, 0x59F111F1, 0x923F82A4, 0xAB1C5ED5,
-	      0xD807AA98, 0x12835B01, 0x243185BE, 0x550C7DC3,
-	      0x72BE5D74, 0x80DEB1FE, 0x9BDC06A7, 0xC19BF174,
-	      0xE49B69C1, 0xEFBE4786, 0x0FC19DC6, 0x240CA1CC,
-	      0x2DE92C6F, 0x4A7484AA, 0x5CB0A9DC, 0x76F988DA,
-	      0x983E5152, 0xA831C66D, 0xB00327C8, 0xBF597FC7,
-	      0xC6E00BF3, 0xD5A79147, 0x06CA6351, 0x14292967,
-	      0x27B70A85, 0x2E1B2138, 0x4D2C6DFC, 0x53380D13,
-	      0x650A7354, 0x766A0ABB, 0x81C2C92E, 0x92722C85,
-	      0xA2BFE8A1, 0xA81A664B, 0xC24B8B70, 0xC76C51A3,
-	      0xD192E819, 0xD6990624, 0xF40E3585, 0x106AA070,
-	      0x19A4C116, 0x1E376C08, 0x2748774C, 0x34B0BCB5,
-	      0x391C0CB3, 0x4ED8AA4A, 0x5B9CCA4F, 0x682E6FF3,
-	      0x748F82EE, 0x78A5636F, 0x84C87814, 0x8CC70208,
-	      0x90BEFFFA, 0xA4506CEB, 0xBEF9A3F7, 0xC67178F2
-	    ]
-
-	  inherits(Sha256, Hash)
-	  var W = new Array(64)
-	  var POOL = []
-	  function Sha256() {
-	    if(POOL.length) {
-	      //return POOL.shift().init()
-	    }
-	    //this._data = new Buffer(32)
-
-	    this.init()
-
-	    this._w = W //new Array(64)
-
-	    Hash.call(this, 16*4, 14*4)
-	  };
-
-	  Sha256.prototype.init = function () {
-
-	    this._a = 0x6a09e667|0
-	    this._b = 0xbb67ae85|0
-	    this._c = 0x3c6ef372|0
-	    this._d = 0xa54ff53a|0
-	    this._e = 0x510e527f|0
-	    this._f = 0x9b05688c|0
-	    this._g = 0x1f83d9ab|0
-	    this._h = 0x5be0cd19|0
-
-	    this._len = this._s = 0
-
-	    return this
-	  }
-
-	  var safe_add = function(x, y) {
-	    var lsw = (x & 0xFFFF) + (y & 0xFFFF);
-	    var msw = (x >> 16) + (y >> 16) + (lsw >> 16);
-	    return (msw << 16) | (lsw & 0xFFFF);
-	  }
-
-	  function S (X, n) {
-	    return (X >>> n) | (X << (32 - n));
-	  }
-
-	  function R (X, n) {
-	    return (X >>> n);
-	  }
-
-	  function Ch (x, y, z) {
-	    return ((x & y) ^ ((~x) & z));
-	  }
-
-	  function Maj (x, y, z) {
-	    return ((x & y) ^ (x & z) ^ (y & z));
-	  }
-
-	  function Sigma0256 (x) {
-	    return (S(x, 2) ^ S(x, 13) ^ S(x, 22));
-	  }
-
-	  function Sigma1256 (x) {
-	    return (S(x, 6) ^ S(x, 11) ^ S(x, 25));
-	  }
-
-	  function Gamma0256 (x) {
-	    return (S(x, 7) ^ S(x, 18) ^ R(x, 3));
-	  }
-
-	  function Gamma1256 (x) {
-	    return (S(x, 17) ^ S(x, 19) ^ R(x, 10));
-	  }
-
-	  Sha256.prototype._update = function(m) {
-	    var M = this._block
-	    var W = this._w
-	    var a, b, c, d, e, f, g, h
-	    var T1, T2
-
-	    a = this._a | 0
-	    b = this._b | 0
-	    c = this._c | 0
-	    d = this._d | 0
-	    e = this._e | 0
-	    f = this._f | 0
-	    g = this._g | 0
-	    h = this._h | 0
-
-	    for (var j = 0; j < 64; j++) {
-	      var w = W[j] = j < 16
-	        ? M.readInt32BE(j * 4)
-	        : Gamma1256(W[j - 2]) + W[j - 7] + Gamma0256(W[j - 15]) + W[j - 16]
-
-	      T1 = h + Sigma1256(e) + Ch(e, f, g) + K[j] + w
-
-	      T2 = Sigma0256(a) + Maj(a, b, c);
-	      h = g; g = f; f = e; e = d + T1; d = c; c = b; b = a; a = T1 + T2;
-	    }
-
-	    this._a = (a + this._a) | 0
-	    this._b = (b + this._b) | 0
-	    this._c = (c + this._c) | 0
-	    this._d = (d + this._d) | 0
-	    this._e = (e + this._e) | 0
-	    this._f = (f + this._f) | 0
-	    this._g = (g + this._g) | 0
-	    this._h = (h + this._h) | 0
-
-	  };
-
-	  Sha256.prototype._hash = function () {
-	    if(POOL.length < 10)
-	      POOL.push(this)
-
-	    var H = new Buffer(32)
-
-	    H.writeInt32BE(this._a,  0)
-	    H.writeInt32BE(this._b,  4)
-	    H.writeInt32BE(this._c,  8)
-	    H.writeInt32BE(this._d, 12)
-	    H.writeInt32BE(this._e, 16)
-	    H.writeInt32BE(this._f, 20)
-	    H.writeInt32BE(this._g, 24)
-	    H.writeInt32BE(this._h, 28)
-
-	    return H
-	  }
-
-	  return Sha256
-
-	}
-
-
-/***/ },
-/* 272 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var lookup = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
-
-	;(function (exports) {
-		'use strict';
-
-	  var Arr = (typeof Uint8Array !== 'undefined')
-	    ? Uint8Array
-	    : Array
-
-		var ZERO   = '0'.charCodeAt(0)
-		var PLUS   = '+'.charCodeAt(0)
-		var SLASH  = '/'.charCodeAt(0)
-		var NUMBER = '0'.charCodeAt(0)
-		var LOWER  = 'a'.charCodeAt(0)
-		var UPPER  = 'A'.charCodeAt(0)
-
-		function decode (elt) {
-			var code = elt.charCodeAt(0)
-			if (code === PLUS)
-				return 62 // '+'
-			if (code === SLASH)
-				return 63 // '/'
-			if (code < NUMBER)
-				return -1 //no match
-			if (code < NUMBER + 10)
-				return code - NUMBER + 26 + 26
-			if (code < UPPER + 26)
-				return code - UPPER
-			if (code < LOWER + 26)
-				return code - LOWER + 26
-		}
-
-		function b64ToByteArray (b64) {
-			var i, j, l, tmp, placeHolders, arr
-
-			if (b64.length % 4 > 0) {
-				throw new Error('Invalid string. Length must be a multiple of 4')
-			}
-
-			// the number of equal signs (place holders)
-			// if there are two placeholders, than the two characters before it
-			// represent one byte
-			// if there is only one, then the three characters before it represent 2 bytes
-			// this is just a cheap hack to not do indexOf twice
-			var len = b64.length
-			placeHolders = '=' === b64.charAt(len - 2) ? 2 : '=' === b64.charAt(len - 1) ? 1 : 0
-
-			// base64 is 4/3 + up to two characters of the original data
-			arr = new Arr(b64.length * 3 / 4 - placeHolders)
-
-			// if there are placeholders, only get up to the last complete 4 chars
-			l = placeHolders > 0 ? b64.length - 4 : b64.length
-
-			var L = 0
-
-			function push (v) {
-				arr[L++] = v
-			}
-
-			for (i = 0, j = 0; i < l; i += 4, j += 3) {
-				tmp = (decode(b64.charAt(i)) << 18) | (decode(b64.charAt(i + 1)) << 12) | (decode(b64.charAt(i + 2)) << 6) | decode(b64.charAt(i + 3))
-				push((tmp & 0xFF0000) >> 16)
-				push((tmp & 0xFF00) >> 8)
-				push(tmp & 0xFF)
-			}
-
-			if (placeHolders === 2) {
-				tmp = (decode(b64.charAt(i)) << 2) | (decode(b64.charAt(i + 1)) >> 4)
-				push(tmp & 0xFF)
-			} else if (placeHolders === 1) {
-				tmp = (decode(b64.charAt(i)) << 10) | (decode(b64.charAt(i + 1)) << 4) | (decode(b64.charAt(i + 2)) >> 2)
-				push((tmp >> 8) & 0xFF)
-				push(tmp & 0xFF)
-			}
-
-			return arr
-		}
-
-		function uint8ToBase64 (uint8) {
-			var i,
-				extraBytes = uint8.length % 3, // if we have 1 byte left, pad 2 bytes
-				output = "",
-				temp, length
-
-			function encode (num) {
-				return lookup.charAt(num)
-			}
-
-			function tripletToBase64 (num) {
-				return encode(num >> 18 & 0x3F) + encode(num >> 12 & 0x3F) + encode(num >> 6 & 0x3F) + encode(num & 0x3F)
-			}
-
-			// go through the array every three bytes, we'll deal with trailing stuff later
-			for (i = 0, length = uint8.length - extraBytes; i < length; i += 3) {
-				temp = (uint8[i] << 16) + (uint8[i + 1] << 8) + (uint8[i + 2])
-				output += tripletToBase64(temp)
-			}
-
-			// pad the end with zeros, but make sure to not forget the extra bytes
-			switch (extraBytes) {
-				case 1:
-					temp = uint8[uint8.length - 1]
-					output += encode(temp >> 2)
-					output += encode((temp << 4) & 0x3F)
-					output += '=='
-					break
-				case 2:
-					temp = (uint8[uint8.length - 2] << 8) + (uint8[uint8.length - 1])
-					output += encode(temp >> 10)
-					output += encode((temp >> 4) & 0x3F)
-					output += encode((temp << 2) & 0x3F)
-					output += '='
-					break
-			}
-
-			return output
-		}
-
-		module.exports.toByteArray = b64ToByteArray
-		module.exports.fromByteArray = uint8ToBase64
-	}())
-
-
-/***/ },
-/* 273 */
-/***/ function(module, exports, __webpack_require__) {
-
-	exports.write = write
-	exports.zeroFill = zeroFill
-
-	exports.toString = toString
-
-	function write (buffer, string, enc, start, from, to, LE) {
-	  var l = (to - from)
-	  if(enc === 'ascii' || enc === 'binary') {
-	    for( var i = 0; i < l; i++) {
-	      buffer[start + i] = string.charCodeAt(i + from)
-	    }
-	  }
-	  else if(enc == null) {
-	    for( var i = 0; i < l; i++) {
-	      buffer[start + i] = string[i + from]
-	    }
-	  }
-	  else if(enc === 'hex') {
-	    for(var i = 0; i < l; i++) {
-	      var j = from + i
-	      buffer[start + i] = parseInt(string[j*2] + string[(j*2)+1], 16)
-	    }
-	  }
-	  else if(enc === 'base64') {
-	    throw new Error('base64 encoding not yet supported')
-	  }
-	  else
-	    throw new Error(enc +' encoding not yet supported')
-	}
-
-	//always fill to the end!
-	function zeroFill(buf, from) {
-	  for(var i = from; i < buf.length; i++)
-	    buf[i] = 0
-	}
-
-
-
-/***/ },
-/* 274 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/* WEBPACK VAR INJECTION */(function(module, Buffer) {
-
-	function toHex (buf, group, wrap, LE) {
-	  buf = buf.buffer || buf
-	  var s = ''
-	  var l = buf.byteLength || buf.length
-	  for(var i = 0; i < l ; i++) {
-	    var byte = (i&0xfffffffc)|(!LE ? i%4 : 3 - i%4)
-	    s = s + ((buf[byte]>>4).toString(16))
-	          + ((buf[byte]&0xf).toString(16))
-	          + (group-1==i%group ? ' ' : '')
-	          + (wrap-1==i%wrap ? '\n' : '')
-	  }
-	  return s
-	}
-
-	function reverseByteOrder(n) {
-	  return (
-	    ((n << 24) & 0xff000000)
-	  | ((n <<  8) & 0x00ff0000)
-	  | ((n >>  8) & 0x0000ff00)
-	  | ((n >> 24) & 0x000000ff)
-	  )
-	}
-
-	var hexpp = module.exports = function (buffer, opts) {
-	  opts = opts || {}
-	  opts.groups = opts.groups || 4
-	  opts.wrap = opts.wrap || 16
-	  return toHex(buffer, opts.groups, opts.wrap, opts.bigendian, opts.ints)
-	}
-
-	hexpp.defaults = function (opts) {
-	  return function (b) {
-	    return hexpp(b, opts)
-	  }
-	}
-
-	if(!module.parent) {
-	  var b = new Buffer (64)
-	  console.log(hexpp(b))
-	  console.log(hexpp(b, {bigendian: true}))
-	}
-
-	
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(259)(module), __webpack_require__(264).Buffer))
-
-/***/ },
-/* 275 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/* WEBPACK VAR INJECTION */(function(global, process) {// Copyright Joyent, Inc. and other Node contributors.
-	//
-	// Permission is hereby granted, free of charge, to any person obtaining a
-	// copy of this software and associated documentation files (the
-	// "Software"), to deal in the Software without restriction, including
-	// without limitation the rights to use, copy, modify, merge, publish,
-	// distribute, sublicense, and/or sell copies of the Software, and to permit
-	// persons to whom the Software is furnished to do so, subject to the
-	// following conditions:
-	//
-	// The above copyright notice and this permission notice shall be included
-	// in all copies or substantial portions of the Software.
-	//
-	// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-	// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-	// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-	// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-	// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-	// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-	// USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-	var formatRegExp = /%[sdj%]/g;
-	exports.format = function(f) {
-	  if (!isString(f)) {
-	    var objects = [];
-	    for (var i = 0; i < arguments.length; i++) {
-	      objects.push(inspect(arguments[i]));
-	    }
-	    return objects.join(' ');
-	  }
-
-	  var i = 1;
-	  var args = arguments;
-	  var len = args.length;
-	  var str = String(f).replace(formatRegExp, function(x) {
-	    if (x === '%%') return '%';
-	    if (i >= len) return x;
-	    switch (x) {
-	      case '%s': return String(args[i++]);
-	      case '%d': return Number(args[i++]);
-	      case '%j':
-	        try {
-	          return JSON.stringify(args[i++]);
-	        } catch (_) {
-	          return '[Circular]';
-	        }
-	      default:
-	        return x;
-	    }
-	  });
-	  for (var x = args[i]; i < len; x = args[++i]) {
-	    if (isNull(x) || !isObject(x)) {
-	      str += ' ' + x;
-	    } else {
-	      str += ' ' + inspect(x);
-	    }
-	  }
-	  return str;
-	};
-
-
-	// Mark that a method should not be used.
-	// Returns a modified function which warns once by default.
-	// If --no-deprecation is set, then it is a no-op.
-	exports.deprecate = function(fn, msg) {
-	  // Allow for deprecating things in the process of starting up.
-	  if (isUndefined(global.process)) {
-	    return function() {
-	      return exports.deprecate(fn, msg).apply(this, arguments);
-	    };
-	  }
-
-	  if (process.noDeprecation === true) {
-	    return fn;
-	  }
-
-	  var warned = false;
-	  function deprecated() {
-	    if (!warned) {
-	      if (process.throwDeprecation) {
-	        throw new Error(msg);
-	      } else if (process.traceDeprecation) {
-	        console.trace(msg);
-	      } else {
-	        console.error(msg);
-	      }
-	      warned = true;
-	    }
-	    return fn.apply(this, arguments);
-	  }
-
-	  return deprecated;
-	};
-
-
-	var debugs = {};
-	var debugEnviron;
-	exports.debuglog = function(set) {
-	  if (isUndefined(debugEnviron))
-	    debugEnviron = process.env.NODE_DEBUG || '';
-	  set = set.toUpperCase();
-	  if (!debugs[set]) {
-	    if (new RegExp('\\b' + set + '\\b', 'i').test(debugEnviron)) {
-	      var pid = process.pid;
-	      debugs[set] = function() {
-	        var msg = exports.format.apply(exports, arguments);
-	        console.error('%s %d: %s', set, pid, msg);
-	      };
-	    } else {
-	      debugs[set] = function() {};
-	    }
-	  }
-	  return debugs[set];
-	};
-
-
-	/**
-	 * Echos the value of a value. Trys to print the value out
-	 * in the best way possible given the different types.
-	 *
-	 * @param {Object} obj The object to print out.
-	 * @param {Object} opts Optional options object that alters the output.
-	 */
-	/* legacy: obj, showHidden, depth, colors*/
-	function inspect(obj, opts) {
-	  // default options
-	  var ctx = {
-	    seen: [],
-	    stylize: stylizeNoColor
-	  };
-	  // legacy...
-	  if (arguments.length >= 3) ctx.depth = arguments[2];
-	  if (arguments.length >= 4) ctx.colors = arguments[3];
-	  if (isBoolean(opts)) {
-	    // legacy...
-	    ctx.showHidden = opts;
-	  } else if (opts) {
-	    // got an "options" object
-	    exports._extend(ctx, opts);
-	  }
-	  // set default options
-	  if (isUndefined(ctx.showHidden)) ctx.showHidden = false;
-	  if (isUndefined(ctx.depth)) ctx.depth = 2;
-	  if (isUndefined(ctx.colors)) ctx.colors = false;
-	  if (isUndefined(ctx.customInspect)) ctx.customInspect = true;
-	  if (ctx.colors) ctx.stylize = stylizeWithColor;
-	  return formatValue(ctx, obj, ctx.depth);
-	}
-	exports.inspect = inspect;
-
-
-	// http://en.wikipedia.org/wiki/ANSI_escape_code#graphics
-	inspect.colors = {
-	  'bold' : [1, 22],
-	  'italic' : [3, 23],
-	  'underline' : [4, 24],
-	  'inverse' : [7, 27],
-	  'white' : [37, 39],
-	  'grey' : [90, 39],
-	  'black' : [30, 39],
-	  'blue' : [34, 39],
-	  'cyan' : [36, 39],
-	  'green' : [32, 39],
-	  'magenta' : [35, 39],
-	  'red' : [31, 39],
-	  'yellow' : [33, 39]
-	};
-
-	// Don't use 'blue' not visible on cmd.exe
-	inspect.styles = {
-	  'special': 'cyan',
-	  'number': 'yellow',
-	  'boolean': 'yellow',
-	  'undefined': 'grey',
-	  'null': 'bold',
-	  'string': 'green',
-	  'date': 'magenta',
-	  // "name": intentionally not styling
-	  'regexp': 'red'
-	};
-
-
-	function stylizeWithColor(str, styleType) {
-	  var style = inspect.styles[styleType];
-
-	  if (style) {
-	    return '\u001b[' + inspect.colors[style][0] + 'm' + str +
-	           '\u001b[' + inspect.colors[style][1] + 'm';
-	  } else {
-	    return str;
-	  }
-	}
-
-
-	function stylizeNoColor(str, styleType) {
-	  return str;
-	}
-
-
-	function arrayToHash(array) {
-	  var hash = {};
-
-	  array.forEach(function(val, idx) {
-	    hash[val] = true;
-	  });
-
-	  return hash;
-	}
-
-
-	function formatValue(ctx, value, recurseTimes) {
-	  // Provide a hook for user-specified inspect functions.
-	  // Check that value is an object with an inspect function on it
-	  if (ctx.customInspect &&
-	      value &&
-	      isFunction(value.inspect) &&
-	      // Filter out the util module, it's inspect function is special
-	      value.inspect !== exports.inspect &&
-	      // Also filter out any prototype objects using the circular check.
-	      !(value.constructor && value.constructor.prototype === value)) {
-	    var ret = value.inspect(recurseTimes, ctx);
-	    if (!isString(ret)) {
-	      ret = formatValue(ctx, ret, recurseTimes);
-	    }
-	    return ret;
-	  }
-
-	  // Primitive types cannot have properties
-	  var primitive = formatPrimitive(ctx, value);
-	  if (primitive) {
-	    return primitive;
-	  }
-
-	  // Look up the keys of the object.
-	  var keys = Object.keys(value);
-	  var visibleKeys = arrayToHash(keys);
-
-	  if (ctx.showHidden) {
-	    keys = Object.getOwnPropertyNames(value);
-	  }
-
-	  // IE doesn't make error fields non-enumerable
-	  // http://msdn.microsoft.com/en-us/library/ie/dww52sbt(v=vs.94).aspx
-	  if (isError(value)
-	      && (keys.indexOf('message') >= 0 || keys.indexOf('description') >= 0)) {
-	    return formatError(value);
-	  }
-
-	  // Some type of object without properties can be shortcutted.
-	  if (keys.length === 0) {
-	    if (isFunction(value)) {
-	      var name = value.name ? ': ' + value.name : '';
-	      return ctx.stylize('[Function' + name + ']', 'special');
-	    }
-	    if (isRegExp(value)) {
-	      return ctx.stylize(RegExp.prototype.toString.call(value), 'regexp');
-	    }
-	    if (isDate(value)) {
-	      return ctx.stylize(Date.prototype.toString.call(value), 'date');
-	    }
-	    if (isError(value)) {
-	      return formatError(value);
-	    }
-	  }
-
-	  var base = '', array = false, braces = ['{', '}'];
-
-	  // Make Array say that they are Array
-	  if (isArray(value)) {
-	    array = true;
-	    braces = ['[', ']'];
-	  }
-
-	  // Make functions say that they are functions
-	  if (isFunction(value)) {
-	    var n = value.name ? ': ' + value.name : '';
-	    base = ' [Function' + n + ']';
-	  }
-
-	  // Make RegExps say that they are RegExps
-	  if (isRegExp(value)) {
-	    base = ' ' + RegExp.prototype.toString.call(value);
-	  }
-
-	  // Make dates with properties first say the date
-	  if (isDate(value)) {
-	    base = ' ' + Date.prototype.toUTCString.call(value);
-	  }
-
-	  // Make error with message first say the error
-	  if (isError(value)) {
-	    base = ' ' + formatError(value);
-	  }
-
-	  if (keys.length === 0 && (!array || value.length == 0)) {
-	    return braces[0] + base + braces[1];
-	  }
-
-	  if (recurseTimes < 0) {
-	    if (isRegExp(value)) {
-	      return ctx.stylize(RegExp.prototype.toString.call(value), 'regexp');
-	    } else {
-	      return ctx.stylize('[Object]', 'special');
-	    }
-	  }
-
-	  ctx.seen.push(value);
-
-	  var output;
-	  if (array) {
-	    output = formatArray(ctx, value, recurseTimes, visibleKeys, keys);
-	  } else {
-	    output = keys.map(function(key) {
-	      return formatProperty(ctx, value, recurseTimes, visibleKeys, key, array);
-	    });
-	  }
-
-	  ctx.seen.pop();
-
-	  return reduceToSingleString(output, base, braces);
-	}
-
-
-	function formatPrimitive(ctx, value) {
-	  if (isUndefined(value))
-	    return ctx.stylize('undefined', 'undefined');
-	  if (isString(value)) {
-	    var simple = '\'' + JSON.stringify(value).replace(/^"|"$/g, '')
-	                                             .replace(/'/g, "\\'")
-	                                             .replace(/\\"/g, '"') + '\'';
-	    return ctx.stylize(simple, 'string');
-	  }
-	  if (isNumber(value))
-	    return ctx.stylize('' + value, 'number');
-	  if (isBoolean(value))
-	    return ctx.stylize('' + value, 'boolean');
-	  // For some reason typeof null is "object", so special case here.
-	  if (isNull(value))
-	    return ctx.stylize('null', 'null');
-	}
-
-
-	function formatError(value) {
-	  return '[' + Error.prototype.toString.call(value) + ']';
-	}
-
-
-	function formatArray(ctx, value, recurseTimes, visibleKeys, keys) {
-	  var output = [];
-	  for (var i = 0, l = value.length; i < l; ++i) {
-	    if (hasOwnProperty(value, String(i))) {
-	      output.push(formatProperty(ctx, value, recurseTimes, visibleKeys,
-	          String(i), true));
-	    } else {
-	      output.push('');
-	    }
-	  }
-	  keys.forEach(function(key) {
-	    if (!key.match(/^\d+$/)) {
-	      output.push(formatProperty(ctx, value, recurseTimes, visibleKeys,
-	          key, true));
-	    }
-	  });
-	  return output;
-	}
-
-
-	function formatProperty(ctx, value, recurseTimes, visibleKeys, key, array) {
-	  var name, str, desc;
-	  desc = Object.getOwnPropertyDescriptor(value, key) || { value: value[key] };
-	  if (desc.get) {
-	    if (desc.set) {
-	      str = ctx.stylize('[Getter/Setter]', 'special');
-	    } else {
-	      str = ctx.stylize('[Getter]', 'special');
-	    }
-	  } else {
-	    if (desc.set) {
-	      str = ctx.stylize('[Setter]', 'special');
-	    }
-	  }
-	  if (!hasOwnProperty(visibleKeys, key)) {
-	    name = '[' + key + ']';
-	  }
-	  if (!str) {
-	    if (ctx.seen.indexOf(desc.value) < 0) {
-	      if (isNull(recurseTimes)) {
-	        str = formatValue(ctx, desc.value, null);
-	      } else {
-	        str = formatValue(ctx, desc.value, recurseTimes - 1);
-	      }
-	      if (str.indexOf('\n') > -1) {
-	        if (array) {
-	          str = str.split('\n').map(function(line) {
-	            return '  ' + line;
-	          }).join('\n').substr(2);
-	        } else {
-	          str = '\n' + str.split('\n').map(function(line) {
-	            return '   ' + line;
-	          }).join('\n');
-	        }
-	      }
-	    } else {
-	      str = ctx.stylize('[Circular]', 'special');
-	    }
-	  }
-	  if (isUndefined(name)) {
-	    if (array && key.match(/^\d+$/)) {
-	      return str;
-	    }
-	    name = JSON.stringify('' + key);
-	    if (name.match(/^"([a-zA-Z_][a-zA-Z_0-9]*)"$/)) {
-	      name = name.substr(1, name.length - 2);
-	      name = ctx.stylize(name, 'name');
-	    } else {
-	      name = name.replace(/'/g, "\\'")
-	                 .replace(/\\"/g, '"')
-	                 .replace(/(^"|"$)/g, "'");
-	      name = ctx.stylize(name, 'string');
-	    }
-	  }
-
-	  return name + ': ' + str;
-	}
-
-
-	function reduceToSingleString(output, base, braces) {
-	  var numLinesEst = 0;
-	  var length = output.reduce(function(prev, cur) {
-	    numLinesEst++;
-	    if (cur.indexOf('\n') >= 0) numLinesEst++;
-	    return prev + cur.replace(/\u001b\[\d\d?m/g, '').length + 1;
-	  }, 0);
-
-	  if (length > 60) {
-	    return braces[0] +
-	           (base === '' ? '' : base + '\n ') +
-	           ' ' +
-	           output.join(',\n  ') +
-	           ' ' +
-	           braces[1];
-	  }
-
-	  return braces[0] + base + ' ' + output.join(', ') + ' ' + braces[1];
-	}
-
-
-	// NOTE: These type checking functions intentionally don't use `instanceof`
-	// because it is fragile and can be easily faked with `Object.create()`.
-	function isArray(ar) {
-	  return Array.isArray(ar);
-	}
-	exports.isArray = isArray;
-
-	function isBoolean(arg) {
-	  return typeof arg === 'boolean';
-	}
-	exports.isBoolean = isBoolean;
-
-	function isNull(arg) {
-	  return arg === null;
-	}
-	exports.isNull = isNull;
-
-	function isNullOrUndefined(arg) {
-	  return arg == null;
-	}
-	exports.isNullOrUndefined = isNullOrUndefined;
-
-	function isNumber(arg) {
-	  return typeof arg === 'number';
-	}
-	exports.isNumber = isNumber;
-
-	function isString(arg) {
-	  return typeof arg === 'string';
-	}
-	exports.isString = isString;
-
-	function isSymbol(arg) {
-	  return typeof arg === 'symbol';
-	}
-	exports.isSymbol = isSymbol;
-
-	function isUndefined(arg) {
-	  return arg === void 0;
-	}
-	exports.isUndefined = isUndefined;
-
-	function isRegExp(re) {
-	  return isObject(re) && objectToString(re) === '[object RegExp]';
-	}
-	exports.isRegExp = isRegExp;
-
-	function isObject(arg) {
-	  return typeof arg === 'object' && arg !== null;
-	}
-	exports.isObject = isObject;
-
-	function isDate(d) {
-	  return isObject(d) && objectToString(d) === '[object Date]';
-	}
-	exports.isDate = isDate;
-
-	function isError(e) {
-	  return isObject(e) &&
-	      (objectToString(e) === '[object Error]' || e instanceof Error);
-	}
-	exports.isError = isError;
-
-	function isFunction(arg) {
-	  return typeof arg === 'function';
-	}
-	exports.isFunction = isFunction;
-
-	function isPrimitive(arg) {
-	  return arg === null ||
-	         typeof arg === 'boolean' ||
-	         typeof arg === 'number' ||
-	         typeof arg === 'string' ||
-	         typeof arg === 'symbol' ||  // ES6 symbol
-	         typeof arg === 'undefined';
-	}
-	exports.isPrimitive = isPrimitive;
-
-	exports.isBuffer = __webpack_require__(276);
-
-	function objectToString(o) {
-	  return Object.prototype.toString.call(o);
-	}
-
-
-	function pad(n) {
-	  return n < 10 ? '0' + n.toString(10) : n.toString(10);
-	}
-
-
-	var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep',
-	              'Oct', 'Nov', 'Dec'];
-
-	// 26 Feb 16:19:34
-	function timestamp() {
-	  var d = new Date();
-	  var time = [pad(d.getHours()),
-	              pad(d.getMinutes()),
-	              pad(d.getSeconds())].join(':');
-	  return [d.getDate(), months[d.getMonth()], time].join(' ');
-	}
-
-
-	// log is just a thin wrapper to console.log that prepends a timestamp
-	exports.log = function() {
-	  console.log('%s - %s', timestamp(), exports.format.apply(exports, arguments));
-	};
-
-
-	/**
-	 * Inherit the prototype methods from one constructor into another.
-	 *
-	 * The Function.prototype.inherits from lang.js rewritten as a standalone
-	 * function (not on Function.prototype). NOTE: If this file is to be loaded
-	 * during bootstrapping this function needs to be rewritten using some native
-	 * functions as prototype setup using normal JavaScript does not work as
-	 * expected during bootstrapping (see mirror.js in r114903).
-	 *
-	 * @param {function} ctor Constructor function which needs to inherit the
-	 *     prototype.
-	 * @param {function} superCtor Constructor function to inherit prototype from.
-	 */
-	exports.inherits = __webpack_require__(278);
-
-	exports._extend = function(origin, add) {
-	  // Don't do anything if add isn't an object
-	  if (!add || !isObject(add)) return origin;
-
-	  var keys = Object.keys(add);
-	  var i = keys.length;
-	  while (i--) {
-	    origin[keys[i]] = add[keys[i]];
-	  }
-	  return origin;
-	};
-
-	function hasOwnProperty(obj, prop) {
-	  return Object.prototype.hasOwnProperty.call(obj, prop);
-	}
-	
-	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }()), __webpack_require__(277)))
-
-/***/ },
-/* 276 */
-/***/ function(module, exports, __webpack_require__) {
-
-	module.exports = function isBuffer(arg) {
-	  return arg && typeof arg === 'object'
-	    && typeof arg.copy === 'function'
-	    && typeof arg.fill === 'function'
-	    && typeof arg.readUInt8 === 'function';
-	}
-
-/***/ },
-/* 277 */
-/***/ function(module, exports, __webpack_require__) {
-
-	// shim for using process in browser
-
-	var process = module.exports = {};
-
-	process.nextTick = (function () {
-	    var canSetImmediate = typeof window !== 'undefined'
-	    && window.setImmediate;
-	    var canPost = typeof window !== 'undefined'
-	    && window.postMessage && window.addEventListener
-	    ;
-
-	    if (canSetImmediate) {
-	        return function (f) { return window.setImmediate(f) };
-	    }
-
-	    if (canPost) {
-	        var queue = [];
-	        window.addEventListener('message', function (ev) {
-	            var source = ev.source;
-	            if ((source === window || source === null) && ev.data === 'process-tick') {
-	                ev.stopPropagation();
-	                if (queue.length > 0) {
-	                    var fn = queue.shift();
-	                    fn();
-	                }
-	            }
-	        }, true);
-
-	        return function nextTick(fn) {
-	            queue.push(fn);
-	            window.postMessage('process-tick', '*');
-	        };
-	    }
-
-	    return function nextTick(fn) {
-	        setTimeout(fn, 0);
-	    };
-	})();
-
-	process.title = 'browser';
-	process.browser = true;
-	process.env = {};
-	process.argv = [];
-
-	function noop() {}
-
-	process.on = noop;
-	process.once = noop;
-	process.off = noop;
-	process.emit = noop;
-
-	process.binding = function (name) {
-	    throw new Error('process.binding is not supported');
-	}
-
-	// TODO(shtylman)
-	process.cwd = function () { return '/' };
-	process.chdir = function (dir) {
-	    throw new Error('process.chdir is not supported');
-	};
-
-
-/***/ },
-/* 278 */
-/***/ function(module, exports, __webpack_require__) {
-
-	if (typeof Object.create === 'function') {
-	  // implementation from standard node.js 'util' module
-	  module.exports = function inherits(ctor, superCtor) {
-	    ctor.super_ = superCtor
-	    ctor.prototype = Object.create(superCtor.prototype, {
-	      constructor: {
-	        value: ctor,
-	        enumerable: false,
-	        writable: true,
-	        configurable: true
-	      }
-	    });
-	  };
-	} else {
-	  // old school shim for old browsers
-	  module.exports = function inherits(ctor, superCtor) {
-	    ctor.super_ = superCtor
-	    var TempCtor = function () {}
-	    TempCtor.prototype = superCtor.prototype
-	    ctor.prototype = new TempCtor()
-	    ctor.prototype.constructor = ctor
-	  }
 	}
 
 
