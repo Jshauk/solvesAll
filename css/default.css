@@ -1,11 +1,4 @@
 @font-face {
-    font-family: 'carrington';
-    src:url(../fonts/carrington.woff) format('woff'),
-    url(../fonts/Carrington.ttf) format('truetype');
-    font-weight: normal;
-    font-style: normal;
-}
-@font-face {
     font-family: 'Lato';
     font-style: normal;
     font-weight: 400;
@@ -58,30 +51,8 @@ body {
 }
 
 #headerTitle{
-    font-family: 'carrington';
-    /*color: #ffffff;*/
-    margin: 0px auto;
     padding-top: 7px;
-    text-align: center;
-    font-size: 50px;
-    width: auto;
-    text-shadow:
-        2px 2px 0 #fff,
-        -1px -1px 0 #fff,
-        1px -1px 0 #fff,
-        -1px 1px 0 #fff,
-        1px 1px 0 #fff;
-}
-
-#menuTitle{
-    font-family: carrington;
-    font-size: 45px;
-    text-shadow:
-        2px 2px 0 #fff,
-        -1px -1px 0 #fff,
-        1px -1px 0 #fff,
-        -1px 1px 0 #fff,
-        1px 1px 0 #fff;
+    height: 50px;
 }
 
 button{
@@ -116,4 +87,14 @@ a{
 
 .main{
     margin-top: 71px;
+}
+
+#imgWrap{
+    width: 100%;
+    margin: 0 auto;
+    text-align: center;
+}
+
+#menuTitleImg{
+    height: 55px;
 }
