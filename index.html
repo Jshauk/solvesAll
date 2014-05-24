@@ -9,17 +9,20 @@
     <script src="js/modernizr.custom.js"></script>
     <script src="js/menu.js"></script>
     <script src="js/math.js"></script>
+    <script src="js/classie.js"></script>
     <script>
+
         $(document).ready(function(){
             $('.title').click(function(){
                 $(this).nextUntil('.title').slideToggle(500);
             });
         });
+
     </script>
 </head>
 <body class="cbp-spmenu-push">
 <nav class="cbp-spmenu cbp-spmenu-vertical cbp-spmenu-left" id="cbp-spmenu-s1">
-    <h3>Menu</h3>
+    <h3 id="menuTitle">Menu</h3>
     <a href="#" onclick="showAll()">All</a>
     <a href="#" onclick="showAlgebra()">Algebra</a>
     <a href="#" onclick="showPhysics()">Physics</a>
@@ -27,13 +30,14 @@
 </nav>
 
 <div class="container">
-<div class="main">
-    <div id="header">
-        <!-- Class "cbp-spmenu-open" gets applied to menu -->
-        <button id="showLeft"></button>
-        <p id="headerTitle">solvesAll</p>
-    </div>
 
+<div id="header">
+    <!-- Class "cbp-spmenu-open" gets applied to menu -->
+    <img id="showLeft" src="img/menu.svg">
+    <p id="headerTitle">solvesAll</p>
+</div>
+
+<div class="main">
     <!--Solve:Quadratic Formula-->
     <h3 id="qF" class='title algebra'> Quadratic Formula </h3>
     <div id='quadX' class="content">
@@ -42,7 +46,7 @@
         a: <input id="a" type="text"><br>
         c: <input id="c" type="text"><br>
 
-        <button type="button" onclick='quadraticX()'>Solve for x</button>
+        <button type="button" onclick='quadraticX()'>Solve</button>
         <button type="button" onclick='clearQuadratic()'>Clear</button><br>
         x: <input id='x1' type='text'><br>
         or<br>
@@ -55,7 +59,7 @@
     <div id='referenceAngle' class="content">
 
         Angle: <input id='angle' type='text'><br>
-        <button type="button" onclick='refAngle()'>Find Reference Angle</button>
+        <button type="button" onclick='refAngle()'>Solve</button>
         <button type="button" onclick='clearRefAng()'>Clear</button><br>
         Reference Angle: <input id='refAngle' type='text'>
 
@@ -85,7 +89,7 @@
         Coordinates for Point Number 2<br>
         x2: <input id='pS_X2' type='text'><br>
         y2: <input id='pS_Y2' type='text'><br>
-        <button type="button" onclick='pointSlope()'>Find m</button>
+        <button type="button" onclick='pointSlope()'>Solve</button>
         <button type="button" onclick='clearPointSlope()'>Clear</button><br>
         m: <input id='pS_M' type='text'>
 
@@ -101,7 +105,7 @@
         Coordinates for Point Number 2<br>
         x2: <input id='dtp_X2' type='text'><br>
         y2: <input id='dtp_Y2' type='text'><br>
-        <button type="button" onclick='DTP()'>Find distance</button>
+        <button type="button" onclick='DTP()'>Solve</button>
         <button type="button" onclick='clearDTP()'>Clear</button><br>
         Distance: <input id='dtp_D' type='text'>
 
@@ -113,7 +117,7 @@
 
         Number to Calculate Factorial:<br>
         <input id='f_N'type= 'text'><br>
-        <button type="button" onclick='factorial()'>Find Factorial</button>
+        <button type="button" onclick='factorial()'>Solve</button>
         <button type="button" onclick='clearfactorial()'>Clear</button><br>
         Factorial: <input id ='f_Ans' type='text'>
 
@@ -124,7 +128,7 @@
     <div id='degreestoRadians' class="content">
 
         Degrees: <input id='degRadD' type='text'><br>
-        <button type="button" onclick='solveDegreeRadian()'>Convert</button>
+        <button type="button" onclick='solveDegreeRadian()'>Solve</button>
         <button type="button" onclick='clearDegRad()'>Clear</button><br>
         Radians: <input id='degRadR' type='text'>
 
@@ -136,7 +140,7 @@
 
         Approximate Value: <input id='pEaV' type='text'><br>
         Exact Value: <input name='eV' id='pEeV' type='text'><br>
-        <button type="button" onclick='percentageError()'>Find Percentage Error</button>
+        <button type="button" onclick='percentageError()'>Solve</button>
         <button type="button" onclick='clearPercentageError()'>Clear</button><br>
         Percentage Error: <input id='pEpE' type='text'>
 
@@ -230,13 +234,11 @@
 </div>
 </div>
 
-
-<!-- Classie - class helper functions by @desandro https://github.com/desandro/classie -->
-<script src="js/classie.js"></script>
 <script>
     var menuLeft = document.getElementById( 'cbp-spmenu-s1' ),
             showLeft = document.getElementById( 'showLeft' ),
             menu = document.getElementById('cbp-spmenu-s1'),
+            title = document.getElementById('#headerTitle'),
             body = document.body;
 
     showLeft.onclick = function() {
@@ -248,6 +250,14 @@
     menu.onclick = function(){
         classie.toggle(menuLeft, 'cbp-spmenu-open');
     }
+
+    $('.title').click(function(){
+        classie.remove(menuLeft, 'cbp-spmenu-open');
+    });
+
+    $('#headerTitle').click(function(){
+        classie.remove(menuLeft, 'cbp-spmenu-open');
+    });
 
     function disableOther( button ) {
         if( button !== 'showLeft' ) {
