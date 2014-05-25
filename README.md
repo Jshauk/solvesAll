@@ -1,4 +1,4 @@
-solvesAll
+<img src="https://lh4.googleusercontent.com/-PeIuJAtfOjo/U4FigDGbyCI/AAAAAAAAFlk/ogyPVfdYRkg/w568-h117-no/solvesAll.png">
 =========
 
 A javascript application with the goal of solving all math problems simply and quickly
