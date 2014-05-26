@@ -2,10 +2,13 @@
 <html>
 <head>
 
+    <title>solvesAll</title>
     <link rel="shortcut icon" href="../favicon.ico">
     <link rel="stylesheet" type="text/css" href="css/default.css" />
     <link rel="stylesheet" type="text/css" href="css/component.css" />
-    <script src="js/jquery.js"></script>
+    <link rel="stylesheet" type="text/css" href="css/jquery-ui.css" />
+    <script src="js/jquery-1.10.2.js"></script>
+    <script src="js/jquery-ui.js"></script>
     <script src="js/modernizr.custom.js"></script>
     <script src="js/menu.js"></script>
     <script src="js/math.js"></script>
@@ -14,7 +17,7 @@
 
         $(document).ready(function(){
             $('.title').click(function(){
-                $(this).nextUntil('.title').slideToggle(500);
+                $(this).nextUntil('.title').slideToggle(500)
             });
         });
 
@@ -27,20 +30,20 @@
         <a href="#" onclick="showAlgebra()">Algebra</a>
         <a href="#" onclick="showPhysics()">Physics</a>
         <a href="#" onclick="showChemistry()">Chemistry</a>
+        <a href="#" onclick="showConversions()">Conversions</a>
     </nav>
 
     <div class="container">
 
         <div id="header">
-            <!-- Class "cbp-spmenu-open" gets applied to menu -->
-            <img id="showLeft" src='img/menu.svg'>
-            <div id="imgWrap"><img id="headerTitle" src="img/solvesAll.svg"></div>
+                <img id="showLeft" src='img/menu.svg'>
+                <div id="imgWrap"><img id="headerTitle" src="img/solvesAll.svg"></div>
         </div>
 
         <div class="main">
             <!--Solve:Quadratic Formula-->
             <h3 id="qF" class='title algebra'> Quadratic Formula </h3>
-            <div id='quadX' class="content">
+            <div id='quadX' class="content" style="display: none">
 
                 b: <input id="b" type="text"><br>
                 a: <input id="a" type="text"><br>
@@ -56,7 +59,7 @@
 
             <!--Solve:Reference Angle-->
             <h3 id="rA" class='title algebra'> Reference Angle </h3>
-            <div id='referenceAngle' class="content">
+            <div id='referenceAngle' class="content" style="display: none">
 
                 Angle: <input id='angle' type='text'><br>
                 <button type="button" onclick='refAngle()'>Solve</button>
@@ -67,7 +70,7 @@
 
             <!--Solve:Slope Intercept Formula-->
             <h3 id="sIY" class='title algebra'> Slope Intercept Formula</h3>
-            <div id='slopeIntercept' class="content">
+            <div id='slopeIntercept' class="content" style="display: none">
 
                 m: <input id='slopeM' type='text'><br>
                 x: <input id='slopeX' type='text'><br>
@@ -81,7 +84,7 @@
 
             <!--Solve:Point Slope-->
             <h3 id="pS" class='title algebra'> Point Slope </h3>
-            <div id='pointSlope' class="content">
+            <div id='pointSlope' class="content" style="display: none">
 
                 Coordinates for Point Number 1<br>
                 x1: <input id='pS_X1' type='text'><br>
@@ -97,7 +100,7 @@
 
             <!--Solve:Distance Between Two Linear Points-->
             <h3 id="dtp" class='title algebra'> Distance Between Two Points </h3>
-            <div id='distanceTwoPoints' class="content">
+            <div id='distanceTwoPoints' class="content" style="display: none">
 
                 Coordinates for Point Number 1<br>
                 x1: <input id='dtp_X1' type='text'><br>
@@ -113,7 +116,7 @@
 
             <!--Factorial-->
             <h3 id="fac" class='title algebra'> Factorial </h3>
-            <div id='factorial' class="content">
+            <div id='factorial' class="content" style="display: none">
 
                 Number to Calculate Factorial:<br>
                 <input id='f_N'type= 'text'><br>
@@ -125,7 +128,7 @@
 
             <!--Solve:Degrees and Radians-->
             <h3 id="dr" class='title physics'> Degrees/Radians Converter </h3>
-            <div id='degreestoRadians' class="content">
+            <div id='degreestoRadians' class="content" style="display: none">
 
                 Degrees: <input id='degRadD' type='text'><br>
                 <button type="button" onclick='solveDegreeRadian()'>Solve</button>
@@ -136,7 +139,7 @@
 
             <!--Solve:Percentage Error---->
             <h3 id="pE" class='title chemistry'> Percentage Error </h3>
-            <div id='percentageError' class="content">
+            <div id='percentageError' class="content" style="display: none">
 
                 Approximate Value: <input id='pEaV' type='text'><br>
                 Exact Value: <input name='eV' id='pEeV' type='text'><br>
@@ -148,7 +151,7 @@
 
             <!--Solve:Interest-->
             <h3 id="int" class='title algebra'> Interest </h3>
-            <div id='interest' class="content">
+            <div id='interest' class="content" style="display: none">
 
                 Days: <input id='i_D' type='text'><br>
                 Months: <input id='i_M' type='text'><br>
@@ -168,7 +171,7 @@
 
             <!--Solve:Distance Rate Time-->
             <h3 id="drt" class='title physics'> Distance Rate Time </h3>
-            <div id='DistanceRateTime_Rate' class="content">
+            <div id='DistanceRateTime_Rate' class="content" style="display: none">
 
                 ENTER RATE OF SPEED:<br>
                 Feet: <input id='drt_F' type='text'><br>
@@ -183,7 +186,7 @@
 
             </div>
 
-            <div id='DistanceRateTime_Time' class="content">
+            <div id='DistanceRateTime_Time' class="content" style="display: none">
 
                 ENTER TIME:<br>
                 Seconds: <input id='drt_TS' type='text'><br>
@@ -194,7 +197,7 @@
 
             </div>
 
-            <div id='DistanceRateTime_Distance' class="content">
+            <div id='DistanceRateTime_Distance' class="content" style="display: none">
 
                 ENTER DISTANCE:<br>
                 Feet: <input id='drt_DF' type='text'><br>
@@ -205,7 +208,7 @@
 
             </div>
 
-            <div id='DistanceRateTime' class="content">
+            <div id='DistanceRateTime' class="content" style="display: none">
 
                 CALCULATIONS:<br>
                 Distance(miles): <input id='drt_D' type='text'><br>
@@ -219,7 +222,7 @@
 
             <!--Solve:Temperature Converter-->
             <h3 id="cfk" class='title' > Celsius Fahreheit Kelvin </h3>
-            <div id='cfkTemperature' class="content">
+            <div id='cfkTemperature' class="content" style="display: none">
 
                 Celsius: <input id='cfk_c' type='text'><br>
                 Fahreheit: <input id='cfk_f' type='text'><br>
@@ -229,6 +232,22 @@
 
             </div>
 
+            <!--Solve:Mass Conversions-->
+            <h3 id="massCon" class="title chemistry physics conversions">Mass Conversions</h3>
+            <div id="conMass" class="content" style="display: none">
+
+                <select name="massCon">
+                    <option>1</option>
+                    <option>2</option>
+                </select><br>
+                Pounds: <input id="massConPounds" type="text"><br>
+                Grams: <input id="massConGrams" type="text"><br>
+                Kilograms: <input id="massConKilograms" type="text"><br>
+                Milligrams: <input id="massConMilligrams" type="text"><br>
+                <button type="button" onclick='solveMassCon()'>Solve</button>
+                <button type="button" onclick='clearMassCon()'>Clear</button><br>
+
+            </div>
 
 
         </div>

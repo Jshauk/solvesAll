@@ -11,10 +11,14 @@ body {
     color: #47a3da;
     padding: 0;
     margin: 0;
+    text-align: center;
+}
+
+br{
+    display:inline-block !important;
 }
 
 .title{
-    /*font-size: 5em;*/
     text-align: center;
     border-top: 1px solid;
     padding-bottom: 10px;
@@ -25,10 +29,10 @@ body {
 .content{
     border: 1px solid;
     padding: 5px;
-    width: 300px;
+    width: auto;
     margin: 15px auto;
-    display: none;
-    /*color: white;*/
+    display: inline-block;
+    text-align: left;
 }
 
 #header{
@@ -40,18 +44,8 @@ body {
     background-color: #258ECD;
 }
 
-#showLeft{
-    position: absolute;
-    top: 15px;
-    left: 15px;
-    height: 40px;
-    width: 40px;
-    border: none;
-    z-index: 20;
-}
-
 #headerTitle{
-    padding-top: 7px;
+    padding-top: 10px;
     height: 50px;
 }
 
@@ -90,11 +84,29 @@ a{
 }
 
 #imgWrap{
-    width: 100%;
-    margin: 0 auto;
+    margin: 0 25px;
     text-align: center;
 }
 
 #menuTitleImg{
     height: 55px;
+}
+
+#showLeft{
+    margin: 15px 0 0 15px;
+    height: 40px;
+    width: 40px;
+    float: left;
+}
+
+.inline{
+    border: 1px solid;
+    padding: 5px;
+    margin: 15px auto;
+    display:inline-block;
+    -webkit-transition: all 0.3s linear;
+    -moz-transition: all 0.3s linear;
+    -o-transition: all 0.3s linear;
+    -ms-transition: all 0.3s linear;
+    transition: all 0.3s linear;
 }
