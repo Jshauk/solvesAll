@@ -8,6 +8,7 @@
     <link rel="stylesheet" type="text/css" href="css/component.css" />
     <script src="js/jquery-1.10.2.js"></script>
     <script src="js/modernizr.custom.js"></script>
+    <script src="js/jquery.customSelect.min.js"></script>
     <script src="js/menu.js"></script>
     <script src="js/math.js"></script>
     <script src="js/classie.js"></script>
@@ -17,6 +18,7 @@
             $('.title').click(function(){
                 $(this).nextUntil('.title').slideToggle(500)
             });
+            $('select').customSelect();
         });
 
     </script>
@@ -227,6 +229,23 @@
                 Kelvin: <input id='cfk_k' type='text'><br>
                 <button type="button" onclick='cfk_TemperatureConverter()'>Solve</button>
                 <button type="button" onclick='clearcfk_TemperatureConverter()'>Clear</button><br>
+
+            </div>
+
+            <!--Solve:Mass Conversions-->
+            <h3 id="massCon" class="title chemistry physics conversions">Mass Conversions</h3>
+            <div id="conMass" class="content" style="display: none">
+
+                <select name="massCon">
+                    <option>1</option>
+                    <option>2</option>
+                </select><br>
+                Pounds: <input id="massConPounds" type="text"><br>
+                Grams: <input id="massConGrams" type="text"><br>
+                Kilograms: <input id="massConKilograms" type="text"><br>
+                Milligrams: <input id="massConMilligrams" type="text"><br>
+                <button type="button" onclick='solveMassCon()'>Solve</button>
+                <button type="button" onclick='clearMassCon()'>Clear</button><br>
 
             </div>
 

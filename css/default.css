@@ -110,3 +110,34 @@ a{
     -ms-transition: all 0.3s linear;
     transition: all 0.3s linear;
 }
+
+.customSelect {
+    /* This is the default class that is used */
+    width:50px;
+    display:block;
+    background:#fff url(../img/arrow.svg) right center no-repeat;
+    border: 1px solid;
+    border-radius: 20px;
+    /* Put whatever custom styles you want here */
+}
+.customSelect.customSelectHover {
+    background:#47a3da url(../img/arrow2.svg) right center no-repeat;
+    color:white;
+}
+
+.customSelectInner {
+    margin-left: 5px;
+}
+.hasCustomSelect{
+    border-radius: 20px;
+    height: auto !important;
+}
+
+option{
+    background-color: white;
+    color: #47a3da;
+}
+option:focus{
+    background-color: #47a3da;
+    color: white;
+}
