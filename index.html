@@ -229,6 +229,52 @@
 
     </div>
 
+    <!--Solve:Weight Converter-->
+    <h3 id="wc" class='title' > Weight Conversions </h3>
+    <div id='wConverter' class="content">
+
+        Enter beginning weight: <input id='wC_W1' type='text'>
+        <select name="wC_Unit1" id="wC_U1">
+            <option value="wC_units">Units</option>
+            <option value="wC_Tg">Teragram (Tg)</option>
+            <option value="wC_Gg">Gigagram (Gg)</option>
+            <option value="wC_Mg">Megagram (Mg)</option>
+            <option value="wC_kg">Kilogram (kg)</option>
+            <option value="wC_hg">Hectogram (hg)</option>
+            <option value="wC_dag">Decagram (dag)</option>
+            <option value="wC_g">Gram (g)</option>
+            <option value="wC_dg">Decigram (dg)</option>
+            <option value="wC_cg">Centigram (cg)</option>
+            <option value="wC_mg">Milligram (mg)</option>
+            <option value="wC_μg">Microgram (&#181g)</option>
+            <option value="wC_ng">Nanogram (ng)</option>
+            <option value="wC_pg">Picogram (pg)</option>
+            <option value="wC_oz">Ounce (oz)</option>
+            <option value="wC_lb">Pound (lb)</option>
+            <option value="wC_ton">Ton (short ton-US)</option>
+        </select><br>
+
+        Convert into:
+        <select name="wC_Unit2" id="wC_U2">
+            <option value="wC_units">Units</option>
+            <option value="wC_Tg">Teragram (Tg)</option>
+            <option value="wC_Gg">Gigagram (Gg)</option>
+            <option value="wC_Mg">Megagram (Mg)</option>
+            <option value="wC_kg">Kilogram (kg)</option>
+            <option value="wC_hg">Hectogram (hg)</option>
+            <option value="wC_dag">Decagram (dag)</option>
+            <option value="wC_g">Gram (g)</option>
+            <option value="wC_dg">Decigram (&#181g)</option>
+            <option value="wC_ng">Nanogram (ng)</option>
+            <option value="wC_pg">Picogram (pg)</option>
+            <option value="wC_oz">Ounce (oz)</option>
+            <option value="wC_lb">Pound (lb)</option>
+            <option value="wC_ton">Ton (short ton-US)</option>
+        </select><br>
+        <button type="button" onclick='wc_WeightConversion()'>Convert</button>
+        <button type="button" onclick='clrwc_WeightConversion()'>Clear</button><br>
+        <input id='wC_Result1' type='text' id='wC_Result2' type='text'>
+    </div>
 
 
 </div>
