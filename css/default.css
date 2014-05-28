@@ -113,7 +113,7 @@ a{
 
 .customSelect {
     /* This is the default class that is used */
-    width:50px;
+    width:auto;
     display:block;
     background:#fff url(../img/arrow.svg) right center no-repeat;
     border: 1px solid;
@@ -130,6 +130,7 @@ a{
 }
 .hasCustomSelect{
     border-radius: 20px;
+    width: auto !important;
     height: auto !important;
 }
 
