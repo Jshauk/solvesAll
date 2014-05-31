@@ -2,13 +2,11 @@
 <html>
 <head>
 
-    <title>solvesAll</title>
     <link rel="shortcut icon" href="../favicon.ico">
     <link rel="stylesheet" type="text/css" href="css/default.css" />
     <link rel="stylesheet" type="text/css" href="css/component.css" />
-    <script src="js/jquery-1.10.2.js"></script>
+    <script src="js/jquery.js"></script>
     <script src="js/modernizr.custom.js"></script>
-    <script src="js/jquery.customSelect.min.js"></script>
     <script src="js/menu.js"></script>
     <script src="js/math.js"></script>
     <script src="js/classie.js"></script>
@@ -16,244 +14,138 @@
 
         $(document).ready(function(){
             $('.title').click(function(){
-                $(this).nextUntil('.title').slideToggle(500)
+                $(this).nextUntil('.title').slideToggle(500);
             });
-            $('select').customSelect();
         });
 
     </script>
 </head>
 <body class="cbp-spmenu-push">
-    <nav class="cbp-spmenu cbp-spmenu-vertical cbp-spmenu-left" id="cbp-spmenu-s1">
-        <h3 id="menuTitle"><img id="menuTitleImg" src="img/menuTitle.svg"></h3>
-        <a href="#" onclick="showAll()">All</a>
-        <a href="#" onclick="showAlgebra()">Algebra</a>
-        <a href="#" onclick="showPhysics()">Physics</a>
-        <a href="#" onclick="showChemistry()">Chemistry</a>
-        <a href="#" onclick="showConversions()">Conversions</a>
-    </nav>
+<nav class="cbp-spmenu cbp-spmenu-vertical cbp-spmenu-left" id="cbp-spmenu-s1">
+    <h3 id="menuTitle">Menu</h3>
+    <a href="#" onclick="showAll()">All</a>
+    <a href="#" onclick="showAlgebra()">Algebra</a>
+    <a href="#" onclick="showPhysics()">Physics</a>
+    <a href="#" onclick="showChemistry()">Chemistry</a>
+</nav>
 
-    <div class="container">
+<div class="container">
 
-        <div id="header">
-                <img id="showLeft" src='img/menu.svg'>
-                <div id="imgWrap"><img id="headerTitle" src="img/solvesAll.svg"></div>
-        </div>
+<div id="header">
+    <!-- Class "cbp-spmenu-open" gets applied to menu -->
+    <img id="showLeft" src="img/menu.svg">
+    <p id="headerTitle">solvesAll</p>
+</div>
 
-        <div class="main">
-            <!--Solve:Quadratic Formula-->
-            <h3 id="qF" class='title algebra'> Quadratic Formula </h3>
-            <div id='quadX' class="content" style="display: none">
+<div class="main">
+    <!--Solve:Quadratic Formula-->
+    <h3 id="qF" class='title algebra'> Quadratic Formula </h3>
+    <div id='quadX' class="content">
 
-                b: <input id="b" type="text"><br>
-                a: <input id="a" type="text"><br>
-                c: <input id="c" type="text"><br>
+        b: <input id="b" type="text"><br>
+        a: <input id="a" type="text"><br>
+        c: <input id="c" type="text"><br>
 
-                <button type="button" onclick='quadraticX()'>Solve</button>
-                <button type="button" onclick='clearQuadratic()'>Clear</button><br>
-                x: <input id='x1' type='text'><br>
-                or<br>
-                x: <input id='x2' type='text'>
+        <button type="button" onclick='quadraticX()'>Solve</button>
+        <button type="button" onclick='clearQuadratic()'>Clear</button><br>
+        x: <input id='x1' type='text'><br>
+        or<br>
+        x: <input id='x2' type='text'>
 
-            </div>
-
-            <!--Solve:Reference Angle-->
-            <h3 id="rA" class='title algebra'> Reference Angle </h3>
-            <div id='referenceAngle' class="content" style="display: none">
-
-                Angle: <input id='angle' type='text'><br>
-                <button type="button" onclick='refAngle()'>Solve</button>
-                <button type="button" onclick='clearRefAng()'>Clear</button><br>
-                Reference Angle: <input id='refAngle' type='text'>
-
-            </div>
-
-            <!--Solve:Slope Intercept Formula-->
-            <h3 id="sIY" class='title algebra'> Slope Intercept Formula</h3>
-            <div id='slopeIntercept' class="content" style="display: none">
-
-                m: <input id='slopeM' type='text'><br>
-                x: <input id='slopeX' type='text'><br>
-                b: <input id='slopeB' type='text'><br>
-                y: <input id='slopeY' type='text'><br>
-                <button type="button" onclick='solveSlopeIntercept()'>Solve</button>
-                <button type="button" onclick='clearSlopeIntercept()'>Clear</button><br>
-                <span id="slopeVar"></span> <input id='slopeAns' type='text'>
-
-            </div>
-
-            <!--Solve:Point Slope-->
-            <h3 id="pS" class='title algebra'> Point Slope </h3>
-            <div id='pointSlope' class="content" style="display: none">
-
-                Coordinates for Point Number 1<br>
-                x1: <input id='pS_X1' type='text'><br>
-                y1: <input id='pS_Y1' type='text'><br>
-                Coordinates for Point Number 2<br>
-                x2: <input id='pS_X2' type='text'><br>
-                y2: <input id='pS_Y2' type='text'><br>
-                <button type="button" onclick='pointSlope()'>Solve</button>
-                <button type="button" onclick='clearPointSlope()'>Clear</button><br>
-                m: <input id='pS_M' type='text'>
-
-            </div>
-
-            <!--Solve:Distance Between Two Linear Points-->
-            <h3 id="dtp" class='title algebra'> Distance Between Two Points </h3>
-            <div id='distanceTwoPoints' class="content" style="display: none">
-
-                Coordinates for Point Number 1<br>
-                x1: <input id='dtp_X1' type='text'><br>
-                y1: <input id='dtp_Y1' type='text'><br>
-                Coordinates for Point Number 2<br>
-                x2: <input id='dtp_X2' type='text'><br>
-                y2: <input id='dtp_Y2' type='text'><br>
-                <button type="button" onclick='DTP()'>Solve</button>
-                <button type="button" onclick='clearDTP()'>Clear</button><br>
-                Distance: <input id='dtp_D' type='text'>
-
-            </div>
-
-            <!--Factorial-->
-            <h3 id="fac" class='title algebra'> Factorial </h3>
-            <div id='factorial' class="content" style="display: none">
-
-                Number to Calculate Factorial:<br>
-                <input id='f_N'type= 'text'><br>
-                <button type="button" onclick='factorial()'>Solve</button>
-                <button type="button" onclick='clearfactorial()'>Clear</button><br>
-                Factorial: <input id ='f_Ans' type='text'>
-
-            </div>
-
-            <!--Solve:Degrees and Radians-->
-            <h3 id="dr" class='title physics'> Degrees/Radians Converter </h3>
-            <div id='degreestoRadians' class="content" style="display: none">
-
-                Degrees: <input id='degRadD' type='text'><br>
-                <button type="button" onclick='solveDegreeRadian()'>Solve</button>
-                <button type="button" onclick='clearDegRad()'>Clear</button><br>
-                Radians: <input id='degRadR' type='text'>
-
-            </div>
-
-            <!--Solve:Percentage Error---->
-            <h3 id="pE" class='title chemistry'> Percentage Error </h3>
-            <div id='percentageError' class="content" style="display: none">
-
-                Approximate Value: <input id='pEaV' type='text'><br>
-                Exact Value: <input name='eV' id='pEeV' type='text'><br>
-                <button type="button" onclick='percentageError()'>Solve</button>
-                <button type="button" onclick='clearPercentageError()'>Clear</button><br>
-                Percentage Error: <input id='pEpE' type='text'>
-
-            </div>
-
-            <!--Solve:Interest-->
-            <h3 id="int" class='title algebra'> Interest </h3>
-            <div id='interest' class="content" style="display: none">
-
-                Days: <input id='i_D' type='text'><br>
-                Months: <input id='i_M' type='text'><br>
-                <button type="button" onclick='InterestTimeConverter()'>Solve</button>
-                <button type="button" onclick='clearInterestTimeConverter()'>Clear</button><br>
-                Time in years: <input id='interestTimeAns' type='text'><br>
-
-                Principal: <input id='i_P' type='text'><br>
-                Rate Percentage: <input id='i_R' type='text'><br>
-                Time in years: <input id='i_Tiy' type='text'><br>
-                Interest Earned: <input id='i_I' type='text'><br>
-                <button type="button" onclick='solveInterest()'>Solve</button>
-                <button type="button" onclick='clearSolveInterest()'>Clear</button><br>
-                <span id="interestVar"></span> <input id='interestAns' type='text'>
-
-            </div>
-
-            <!--Solve:Distance Rate Time-->
-            <h3 id="drt" class='title physics'> Distance Rate Time </h3>
-            <div id='DistanceRateTime_Rate' class="content" style="display: none">
-
-                ENTER RATE OF SPEED:<br>
-                Feet: <input id='drt_F' type='text'><br>
-                Yards: <input id='drt_Y' type='text'><br>
-                Miles: <input id='drt_Miles' type='text'><br>
-                Per<br>
-                Seconds: <input id='drt_S' type='text'><br>
-                Minutes: <input id='drt_M' type='text'><br>
-                Hours: <input id='drt_H' type='text'><br>
-                <button type="button" onclick='DRT_RateConverter()'>Input</button>
-                <button type="button" onclick='clearDRT_RateConverter()'>Clear</button><br>
-
-            </div>
-
-            <div id='DistanceRateTime_Time' class="content" style="display: none">
-
-                ENTER TIME:<br>
-                Seconds: <input id='drt_TS' type='text'><br>
-                Minutes: <input id='drt_TM' type='text'><br>
-                Hours: <input id='drt_TH' type='text'><br>
-                <button type="button" onclick='DRT_TimeConverter()'>Input</button>
-                <button type="button" onclick='clearDRT_TimeConverter()'>Clear</button><br>
-
-            </div>
-
-            <div id='DistanceRateTime_Distance' class="content" style="display: none">
-
-                ENTER DISTANCE:<br>
-                Feet: <input id='drt_DF' type='text'><br>
-                Yards: <input id='drt_DY' type='text'><br>
-                Miles: <input id='drt_DM' type='text'><br>
-                <button type="button" onclick='DRT_DistanceConverter()'>Input</button>
-                <button type="button" onclick='clearDRT_DistanceConverter()'>Clear</button><br>
-
-            </div>
-
-            <div id='DistanceRateTime' class="content" style="display: none">
-
-                CALCULATIONS:<br>
-                Distance(miles): <input id='drt_D' type='text'><br>
-                Rate(mph): <input id='drt_R' type='text'><br>
-                Time(hours): <input id='drt_T' type='text'><br>
-                <button type="button" onclick='solveDRT()'>Solve</button>
-                <button type="button" onclick='clearSolveDRT()'>Clear</button><br>
-                <span id="drtVar"></span> <input id='drtAns' type='text'>
-
-            </div>
-
-            <!--Solve:Temperature Converter-->
-            <h3 id="cfk" class='title' > Celsius Fahreheit Kelvin </h3>
-            <div id='cfkTemperature' class="content" style="display: none">
-
-                Celsius: <input id='cfk_c' type='text'><br>
-                Fahreheit: <input id='cfk_f' type='text'><br>
-                Kelvin: <input id='cfk_k' type='text'><br>
-                <button type="button" onclick='cfk_TemperatureConverter()'>Solve</button>
-                <button type="button" onclick='clearcfk_TemperatureConverter()'>Clear</button><br>
-
-            </div>
-
-            <!--Solve:Mass Conversions-->
-            <h3 id="massCon" class="title chemistry physics conversions">Mass Conversions</h3>
-            <div id="conMass" class="content" style="display: none">
-
-                <select name="massCon">
-                    <option>1</option>
-                    <option>2</option>
-                </select><br>
-                Pounds: <input id="massConPounds" type="text"><br>
-                Grams: <input id="massConGrams" type="text"><br>
-                Kilograms: <input id="massConKilograms" type="text"><br>
-                Milligrams: <input id="massConMilligrams" type="text"><br>
-                <button type="button" onclick='solveMassCon()'>Solve</button>
-                <button type="button" onclick='clearMassCon()'>Clear</button><br>
-
-            </div>
-
-
-        </div>
     </div>
 
-<<<<<<< HEAD
+    <!--Solve:Reference Angle-->
+    <h3 id="rA" class='title algebra'> Reference Angle </h3>
+    <div id='referenceAngle' class="content">
+
+        Angle: <input id='angle' type='text'><br>
+        <button type="button" onclick='refAngle()'>Solve</button>
+        <button type="button" onclick='clearRefAng()'>Clear</button><br>
+        Reference Angle: <input id='refAngle' type='text'>
+
+    </div>
+
+    <!--Solve:Slope Intercept Formula-->
+    <h3 id="sIY" class='title algebra'> Slope Intercept Formula</h3>
+    <div id='slopeIntercept' class="content">
+
+        m: <input id='slopeM' type='text'><br>
+        x: <input id='slopeX' type='text'><br>
+        b: <input id='slopeB' type='text'><br>
+        y: <input id='slopeY' type='text'><br>
+        <button type="button" onclick='solveSlopeIntercept()'>Solve</button>
+        <button type="button" onclick='clearSlopeIntercept()'>Clear</button><br>
+        <span id="slopeVar"></span> <input id='slopeAns' type='text'>
+
+    </div>
+
+    <!--Solve:Point Slope-->
+    <h3 id="pS" class='title algebra'> Point Slope </h3>
+    <div id='pointSlope' class="content">
+
+        Coordinates for Point Number 1<br>
+        x1: <input id='pS_X1' type='text'><br>
+        y1: <input id='pS_Y1' type='text'><br>
+        Coordinates for Point Number 2<br>
+        x2: <input id='pS_X2' type='text'><br>
+        y2: <input id='pS_Y2' type='text'><br>
+        <button type="button" onclick='pointSlope()'>Solve</button>
+        <button type="button" onclick='clearPointSlope()'>Clear</button><br>
+        m: <input id='pS_M' type='text'>
+
+    </div>
+
+    <!--Solve:Distance Between Two Linear Points-->
+    <h3 id="dtp" class='title algebra'> Distance Between Two Points </h3>
+    <div id='distanceTwoPoints' class="content">
+
+        Coordinates for Point Number 1<br>
+        x1: <input id='dtp_X1' type='text'><br>
+        y1: <input id='dtp_Y1' type='text'><br>
+        Coordinates for Point Number 2<br>
+        x2: <input id='dtp_X2' type='text'><br>
+        y2: <input id='dtp_Y2' type='text'><br>
+        <button type="button" onclick='DTP()'>Solve</button>
+        <button type="button" onclick='clearDTP()'>Clear</button><br>
+        Distance: <input id='dtp_D' type='text'>
+
+    </div>
+
+    <!--Factorial-->
+    <h3 id="fac" class='title algebra'> Factorial </h3>
+    <div id='factorial' class="content">
+
+        Number to Calculate Factorial:<br>
+        <input id='f_N'type= 'text'><br>
+        <button type="button" onclick='factorial()'>Solve</button>
+        <button type="button" onclick='clearfactorial()'>Clear</button><br>
+        Factorial: <input id ='f_Ans' type='text'>
+
+    </div>
+
+    <!--Solve:Degrees and Radians-->
+    <h3 id="dr" class='title physics'> Degrees/Radians Converter </h3>
+    <div id='degreestoRadians' class="content">
+
+        Degrees: <input id='degRadD' type='text'><br>
+        <button type="button" onclick='solveDegreeRadian()'>Solve</button>
+        <button type="button" onclick='clearDegRad()'>Clear</button><br>
+        Radians: <input id='degRadR' type='text'>
+
+    </div>
+
+    <!--Solve:Percentage Error---->
+    <h3 id="pE" class='title chemistry'> Percentage Error </h3>
+    <div id='percentageError' class="content">
+
+        Approximate Value: <input id='pEaV' type='text'><br>
+        Exact Value: <input name='eV' id='pEeV' type='text'><br>
+        <button type="button" onclick='percentageError()'>Solve</button>
+        <button type="button" onclick='clearPercentageError()'>Clear</button><br>
+        Percentage Error: <input id='pEpE' type='text'>
+
+    </div>
+
     <!--Solve:Interest-->
     <h3 id="int" class='title algebra'> Interest </h3>
     <div id='interest' class="content">
@@ -338,50 +230,50 @@
     </div>
 
     <!--Solve:Weight Converter-->
-    <h3 id="wc" class='title' > Weight Conversions </h3>
-    <div id='wConverter' class="content">
+    <h3 id="mc" class='title' > Mass Conversions </h3>
+    <div id='mConverter' class="content">
 
-        Enter beginning weight: <input id='wC_W1' type='text'>
-        <select name="wC_Unit1" id="wC_U1">
-            <option value="wC_units">Units</option>
-            <option value="wC_Tg">Teragram (Tg)</option>
-            <option value="wC_Gg">Gigagram (Gg)</option>
-            <option value="wC_Mg">Megagram (Mg)</option>
-            <option value="wC_kg">Kilogram (kg)</option>
-            <option value="wC_hg">Hectogram (hg)</option>
-            <option value="wC_dag">Decagram (dag)</option>
-            <option value="wC_g">Gram (g)</option>
-            <option value="wC_dg">Decigram (dg)</option>
-            <option value="wC_cg">Centigram (cg)</option>
-            <option value="wC_mg">Milligram (mg)</option>
-            <option value="wC_μg">Microgram (&#181g)</option>
-            <option value="wC_ng">Nanogram (ng)</option>
-            <option value="wC_pg">Picogram (pg)</option>
-            <option value="wC_oz">Ounce (oz)</option>
-            <option value="wC_lb">Pound (lb)</option>
-            <option value="wC_ton">Ton (short ton-US)</option>
+        Enter beginning mass: <input id='mC_M1' type='text'>
+        <select name="mC_Unit1" id="mC_U1">
+            <option value="mC_units">Units</option>
+            <option value="mC_Tg">Teragram (Tg)</option>
+            <option value="mC_Gg">Gigagram (Gg)</option>
+            <option value="mC_Mg">Megagram (Mg)</option>
+            <option value="mC_kg">Kilogram (kg)</option>
+            <option value="mC_hg">Hectogram (hg)</option>
+            <option value="mC_dag">Decagram (dag)</option>
+            <option value="mC_g">Gram (g)</option>
+            <option value="mC_dg">Decigram (dg)</option>
+            <option value="mC_cg">Centigram (cg)</option>
+            <option value="mC_mg">Milligram (mg)</option>
+            <option value="mC_μg">Microgram (&#181g)</option>
+            <option value="mC_ng">Nanogram (ng)</option>
+            <option value="mC_pg">Picogram (pg)</option>
+            <option value="mC_oz">Ounce (oz)</option>
+            <option value="mC_lb">Pound (lb)</option>
+            <option value="mC_ton">Ton (short ton-US)</option>
         </select><br>
 
         Convert into:
-        <select name="wC_Unit2" id="wC_U2">
-            <option value="wC_units">Units</option>
-            <option value="wC_Tg">Teragram (Tg)</option>
-            <option value="wC_Gg">Gigagram (Gg)</option>
-            <option value="wC_Mg">Megagram (Mg)</option>
-            <option value="wC_kg">Kilogram (kg)</option>
-            <option value="wC_hg">Hectogram (hg)</option>
-            <option value="wC_dag">Decagram (dag)</option>
-            <option value="wC_g">Gram (g)</option>
-            <option value="wC_dg">Decigram (&#181g)</option>
-            <option value="wC_ng">Nanogram (ng)</option>
-            <option value="wC_pg">Picogram (pg)</option>
-            <option value="wC_oz">Ounce (oz)</option>
-            <option value="wC_lb">Pound (lb)</option>
-            <option value="wC_ton">Ton (short ton-US)</option>
+        <select name="mC_Unit2" id="mC_U2">
+            <option value="mC_units">Units</option>
+            <option value="mC_Tg">Teragram (Tg)</option>
+            <option value="mC_Gg">Gigagram (Gg)</option>
+            <option value="mC_Mg">Megagram (Mg)</option>
+            <option value="mC_kg">Kilogram (kg)</option>
+            <option value="mC_hg">Hectogram (hg)</option>
+            <option value="mC_dag">Decagram (dag)</option>
+            <option value="mC_g">Gram (g)</option>
+            <option value="mC_dg">Decigram (&#181g)</option>
+            <option value="mC_ng">Nanogram (ng)</option>
+            <option value="mC_pg">Picogram (pg)</option>
+            <option value="mC_oz">Ounce (oz)</option>
+            <option value="mC_lb">Pound (lb)</option>
+            <option value="mC_ton">Ton (short ton-US)</option>
         </select><br>
-        <button type="button" onclick='wc_WeightConversion()'>Convert</button>
-        <button type="button" onclick='clrwc_WeightConversion()'>Clear</button><br>
-        <input id='wC_Result1' type='text' id='wC_Result2' type='text'>
+        <button type="button" onclick='mc_MassConversion()'>Convert</button>
+        <button type="button" onclick='clrmc_MassConversion()'>Clear</button><br>
+        <input id='mC_Result1' type='text' id='mC_Result2' type='text'>
     </div>
 
 
@@ -404,38 +296,20 @@
     menu.onclick = function(){
         classie.toggle(menuLeft, 'cbp-spmenu-open');
     }
-=======
-    <script>
-        var menuLeft = document.getElementById( 'cbp-spmenu-s1' ),
-                showLeft = document.getElementById( 'showLeft' ),
-                menu = document.getElementById('cbp-spmenu-s1'),
-                title = document.getElementById('#headerTitle'),
-                body = document.body;
 
-        showLeft.onclick = function() {
-            classie.toggle( this, 'active' );
-            classie.toggle( menuLeft, 'cbp-spmenu-open' );
-            disableOther( 'showLeft' );
-        };
+    $('.title').click(function(){
+        classie.remove(menuLeft, 'cbp-spmenu-open');
+    });
 
-        menu.onclick = function(){
-            classie.toggle(menuLeft, 'cbp-spmenu-open');
+    $('#headerTitle').click(function(){
+        classie.remove(menuLeft, 'cbp-spmenu-open');
+    });
+
+    function disableOther( button ) {
+        if( button !== 'showLeft' ) {
+            classie.toggle( showLeft, 'disabled' );
         }
->>>>>>> b1d9b64c88a9f54746dcc54a3731e49c4c05f84c
-
-        $('.title').click(function(){
-            classie.remove(menuLeft, 'cbp-spmenu-open');
-        });
-
-        $('#headerTitle').click(function(){
-            classie.remove(menuLeft, 'cbp-spmenu-open');
-        });
-
-        function disableOther( button ) {
-            if( button !== 'showLeft' ) {
-                classie.toggle( showLeft, 'disabled' );
-            }
-        }
-    </script>
+    }
+</script>
 </body>
 </html>

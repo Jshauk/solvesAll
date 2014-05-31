@@ -388,8 +388,8 @@ function cfk_TemperatureConverter(){
 		     document.getElementById("cfk_c").value = ((f - 32) / 1.8);
 			 document.getElementById("cfk_k").value = ((f - 32) / 1.8 + 273.15);
 		}
-				if (!document.getElementById('cfk_f').value && !document.getElementById('cfk_c').value){
-			 document.getElementById("cfk_f").value = (((k - 273.15) * 1.8) + 32);
+		if (!document.getElementById('cfk_f').value && !document.getElementById('cfk_c').value){
+			 $("#cfk_f").value = (((k - 273.15) * 1.8) + 32);
 		     document.getElementById("cfk_c").value = (k - 273.15);
 		}
 }		
@@ -398,4 +398,112 @@ function clearcfk_TemperatureConverter(){
 	document.getElementById('cfk_c').value = '';
 	document.getElementById('cfk_f').value = '';
 	document.getElementById('cfk_k').value = '';
+}
+
+function mc_MassConversion(){
+    var selected1 = $('#mC_U1 option:selected').html();
+    var selected2 = $('#mC_U2 option:selected').html();
+    var amt = Number(document.getElementById('mC_M1').value);
+    var newamt = 0;
+    var endamt = 0;
+
+    if (selected1 == 'Teragram (Tg)'){
+        newamt = amt*1000000000000;
+    }
+    if (selected1 == 'Gigagram (Gg)'){
+        newamt = amt*1000000000;
+    }
+    if (selected1 == 'Megagram (Mg)'){
+        newamt = amt*1000000;
+    }
+    if (selected1 == 'Kilogram (kg)'){
+        newamt = amt*1000;
+    }
+    if (selected1 == 'Hectogram (hg)'){
+        newamt = amt*100;
+    }
+    if (selected1 == 'Decagram (dag)'){
+        newamt = amt*10;
+    }
+    if (selected1 == 'Gram (g)'){
+        newamt = amt;
+    }
+    if (selected1 == 'Decigram (dg)'){
+        newamt = amt/10;
+    }
+    if (selected1 == 'Centigram (cg)'){
+        newamt = amt/100;
+    }
+    if (selected1 == 'Milligram (mg)'){
+        newamt = amt/1000;
+    }
+    if (selected1 == 'Microgram (&#181g)'){
+        newamt = amt/1000000;
+    }
+    if (selected1 == 'Nanogram (ng)'){
+        newamt = amt/1000000000;
+    }
+    if (selected1 == 'Picogram (pg)'){
+        newamt = amt/1000000000000;
+    }
+    if (selected1 == 'Ounce (oz)'){
+        newamt = amt*28.34952316484755;
+    }
+    if (selected1 == 'Pound (lb)'){
+        newamt = amt*453.5923703803783;
+    }
+    if (selected1 == 'Ton (short ton-US)'){
+        newamt = amt*907184.7407607567;
+    }
+    if (selected2 == 'Teragram (Tg)'){
+        endamt = newamt/1000000000000;
+    }
+    if (selected2 == 'Gigagram (Gg)'){
+        endamt = newamt/1000000000;
+    }
+    if (selected2 == 'Megagram (Mg)'){
+        endamt = newamt/1000000;
+    }
+    if (selected2 == 'Kilogram (kg)'){
+        endamt = newamt/1000;
+    }
+    if (selected2 == 'Hectogram (hg)'){
+        endamt = newamt/100;
+    }
+    if (selected2 == 'Decagram (dag)'){
+        endamt = newamt/10;
+    }
+    if (selected2 == 'Gram (g)'){
+        endamt = newamt;
+    }
+    if (selected2 == 'Decigram (dg)'){
+        endamt = newamt*10;
+    }
+    if (selected2 == 'Centigram (cg)'){
+        endamt = newamt*100;
+    }
+    if (selected2 == 'Milligram (mg)'){
+        endamt = newamt*1000;
+    }
+    if (selected2 == 'Microgram (&#181g)'){
+        endamt = newamt*1000000;
+    }
+    if (selected2 == 'Nanogram (ng)'){
+        endamt = newamt*1000000000;
+    }
+    if (selected2 == 'Picogram (pg)'){
+        endamt = newamt*1000000000000;
+    }
+    if (selected2 == 'Ounce (oz)'){
+        endamt = newamt/28.34952316484755;
+    }
+    if (selected2 == 'Pound (lb)')
+    {
+        endamt = newamt/453.5923703803783;
+    }
+    if (selected2 == 'Ton (short ton-US)'){
+        endamt = newamt/907184.7407607567;
+    }
+    document.getElementById("mC_Result1").value = endamt;
+    document.getElementById("mC_Result2").value = selected2;
 }
