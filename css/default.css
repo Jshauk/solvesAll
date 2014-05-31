@@ -1,11 +1,4 @@
 @font-face {
-    font-family: 'carrington';
-    src:url(../fonts/carrington.woff) format('woff'),
-    url(../fonts/Carrington.ttf) format('truetype');
-    font-weight: normal;
-    font-style: normal;
-}
-@font-face {
     font-family: 'Lato';
     font-style: normal;
     font-weight: 400;
@@ -18,10 +11,14 @@ body {
     color: #47a3da;
     padding: 0;
     margin: 0;
+    text-align: center;
+}
+
+br{
+    display:inline-block !important;
 }
 
 .title{
-    /*font-size: 5em;*/
     text-align: center;
     border-top: 1px solid;
     padding-bottom: 10px;
@@ -32,10 +29,10 @@ body {
 .content{
     border: 1px solid;
     padding: 5px;
-    width: 300px;
+    width: auto;
     margin: 15px auto;
-    display: none;
-    /*color: white;*/
+    display: inline-block;
+    text-align: left;
 }
 
 #header{
@@ -47,41 +44,9 @@ body {
     background-color: #258ECD;
 }
 
-#showLeft{
-    position: absolute;
-    top: 15px;
-    left: 15px;
-    height: 40px;
-    width: 40px;
-    border: none;
-    z-index: 20;
-}
-
 #headerTitle{
-    font-family: 'carrington';
-    /*color: #ffffff;*/
-    margin: 0px auto;
-    padding-top: 7px;
-    text-align: center;
-    font-size: 50px;
-    width: auto;
-    text-shadow:
-        2px 2px 0 #fff,
-        -1px -1px 0 #fff,
-        1px -1px 0 #fff,
-        -1px 1px 0 #fff,
-        1px 1px 0 #fff;
-}
-
-#menuTitle{
-    font-family: carrington;
-    font-size: 45px;
-    text-shadow:
-        2px 2px 0 #fff,
-        -1px -1px 0 #fff,
-        1px -1px 0 #fff,
-        -1px 1px 0 #fff,
-        1px 1px 0 #fff;
+    padding-top: 10px;
+    height: 50px;
 }
 
 button{
@@ -116,4 +81,63 @@ a{
 
 .main{
     margin-top: 71px;
+}
+
+#imgWrap{
+    margin: 0 25px;
+    text-align: center;
+}
+
+#menuTitleImg{
+    height: 55px;
+}
+
+#showLeft{
+    margin: 15px 0 0 15px;
+    height: 40px;
+    width: 40px;
+    float: left;
+}
+
+.inline{
+    border: 1px solid;
+    padding: 5px;
+    margin: 15px auto;
+    display:inline-block;
+    -webkit-transition: all 0.3s linear;
+    -moz-transition: all 0.3s linear;
+    -o-transition: all 0.3s linear;
+    -ms-transition: all 0.3s linear;
+    transition: all 0.3s linear;
+}
+
+.customSelect {
+    /* This is the default class that is used */
+    width:50px;
+    display:block;
+    background:#fff url(../img/arrow.svg) right center no-repeat;
+    border: 1px solid;
+    border-radius: 20px;
+    /* Put whatever custom styles you want here */
+}
+.customSelect.customSelectHover {
+    background:#47a3da url(../img/arrow2.svg) right center no-repeat;
+    color:white;
+}
+
+.customSelectInner {
+    margin-left: 5px;
+}
+.hasCustomSelect{
+    border-radius: 20px;
+    height: auto !important;
+}
+
+option{
+    background-color: white;
+    color: #47a3da;
+}
+option:focus{
+    background-color: #47a3da;
+    color: white;
 }
