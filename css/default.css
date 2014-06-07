@@ -92,6 +92,13 @@ a{
     height: 55px;
 }
 
+#menuTitle{
+    height: 55px;
+    padding: 8px 0px 9px;
+    margin: 0;
+    background: #0d77b6;
+}
+
 #showLeft{
     margin: 15px 0 0 15px;
     height: 40px;
@@ -111,13 +118,18 @@ a{
     transition: all 0.3s linear;
 }
 
+select{
+
+}
+
 .customSelect {
     /* This is the default class that is used */
-    width:auto;
+    width:150px;
     display:block;
     background:#fff url(../img/arrow.svg) right center no-repeat;
     border: 1px solid;
     border-radius: 20px;
+    margin: 5px 0 5px 0;
     /* Put whatever custom styles you want here */
 }
 .customSelect.customSelectHover {
@@ -130,8 +142,8 @@ a{
 }
 .hasCustomSelect{
     border-radius: 20px;
-    width: auto !important;
-    height: auto !important;
+    width: 150px !important;
+    height: 18px !important;
 }
 
 option{

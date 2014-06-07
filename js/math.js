@@ -5,9 +5,9 @@ var mathjs = require('mathjs'),
 function quadraticX()
 {
 	//x=-b+sqr((b^2)-(4ac))/2a || x=-b-sqr((b^2)-(4ac))/2a
-	var b = Number(document.getElementById('b').value),
-	    a = Number(document.getElementById('a').value),
-	    c = Number(document.getElementById('c').value),
+	var b = Number($('#b').value),
+	    a = Number($('#a').value),
+	    c = Number($('#c').value),
 	 newB = b*(-1),
 	  ac4 = 4*a*c,
 	   a2 = 2 * a,
@@ -375,135 +375,509 @@ function clearSolveDRT(){
     document.getElementById('drtVar').innerHTML = '';
 }
 
-function cfk_TemperatureConverter(){
-	//c=(f-32)/1.8 || c=k-273.15 || k=(f-32)/1.8+273.15
-	var c = Number(document.getElementById('cfk_c').value),
-	    f = Number(document.getElementById('cfk_f').value),
-		k = Number(document.getElementById('cfk_k').value);
-		if (!document.getElementById('cfk_f').value && !document.getElementById('cfk_k').value){
-		     document.getElementById("cfk_f").value = ((c * 1.8) + 32);
-			 document.getElementById("cfk_k").value = (c + 273.15);
-		}
-		if (!document.getElementById('cfk_c').value && !document.getElementById('cfk_k').value){
-		     document.getElementById("cfk_c").value = ((f - 32) / 1.8);
-			 document.getElementById("cfk_k").value = ((f - 32) / 1.8 + 273.15);
-		}
-		if (!document.getElementById('cfk_f').value && !document.getElementById('cfk_c').value){
-			 $("#cfk_f").value = (((k - 273.15) * 1.8) + 32);
-		     document.getElementById("cfk_c").value = (k - 273.15);
-		}
-}		
-
-function clearcfk_TemperatureConverter(){
-	document.getElementById('cfk_c').value = '';
-	document.getElementById('cfk_f').value = '';
-	document.getElementById('cfk_k').value = '';
-}
-
 function mc_MassConversion(){
     var selected1 = $('#mC_U1 option:selected').html();
     var selected2 = $('#mC_U2 option:selected').html();
     var amt = Number(document.getElementById('mC_M1').value);
-    var newamt = 0;
-    var endamt = 0;
+    console.log(selected1);
+    var newAmt = 0;
+    var endAmt = 0;
 
     if (selected1 == 'Teragram (Tg)'){
-        newamt = amt*1000000000000;
+        newAmt = amt*1000000000000;
     }
     if (selected1 == 'Gigagram (Gg)'){
-        newamt = amt*1000000000;
+        newAmt = amt*1000000000;
     }
     if (selected1 == 'Megagram (Mg)'){
-        newamt = amt*1000000;
+        newAmt = amt*1000000;
     }
     if (selected1 == 'Kilogram (kg)'){
-        newamt = amt*1000;
+        newAmt = amt*1000;
     }
     if (selected1 == 'Hectogram (hg)'){
-        newamt = amt*100;
+        newAmt = amt*100;
     }
     if (selected1 == 'Decagram (dag)'){
-        newamt = amt*10;
+        newAmt = amt*10;
     }
     if (selected1 == 'Gram (g)'){
-        newamt = amt;
+        newAmt = amt;
     }
     if (selected1 == 'Decigram (dg)'){
-        newamt = amt/10;
+        newAmt = amt/10;
     }
     if (selected1 == 'Centigram (cg)'){
-        newamt = amt/100;
+        newAmt = amt/100;
     }
     if (selected1 == 'Milligram (mg)'){
-        newamt = amt/1000;
+        newAmt = amt/1000;
     }
     if (selected1 == 'Microgram (&#181g)'){
-        newamt = amt/1000000;
+        newAmt = amt/1000000;
     }
     if (selected1 == 'Nanogram (ng)'){
-        newamt = amt/1000000000;
+        newAmt = amt/1000000000;
     }
     if (selected1 == 'Picogram (pg)'){
-        newamt = amt/1000000000000;
+        newAmt = amt/1000000000000;
     }
     if (selected1 == 'Ounce (oz)'){
-        newamt = amt*28.34952316484755;
+        newAmt = amt*28.34952316484755;
     }
     if (selected1 == 'Pound (lb)'){
-        newamt = amt*453.5923703803783;
+        newAmt = amt*453.5923703803783;
     }
     if (selected1 == 'Ton (short ton-US)'){
-        newamt = amt*907184.7407607567;
+        newAmt = amt*907184.7407607567;
     }
     if (selected2 == 'Teragram (Tg)'){
-        endamt = newamt/1000000000000;
+        endAmt = newAmt/1000000000000;
     }
     if (selected2 == 'Gigagram (Gg)'){
-        endamt = newamt/1000000000;
+        endAmt = newAmt/1000000000;
     }
     if (selected2 == 'Megagram (Mg)'){
-        endamt = newamt/1000000;
+        endAmt = newAmt/1000000;
     }
     if (selected2 == 'Kilogram (kg)'){
-        endamt = newamt/1000;
+        endAmt = newAmt/1000;
     }
     if (selected2 == 'Hectogram (hg)'){
-        endamt = newamt/100;
+        endAmt = newAmt/100;
     }
     if (selected2 == 'Decagram (dag)'){
-        endamt = newamt/10;
+        endAmt = newAmt/10;
     }
     if (selected2 == 'Gram (g)'){
-        endamt = newamt;
+        endAmt = newAmt;
     }
     if (selected2 == 'Decigram (dg)'){
-        endamt = newamt*10;
+        endAmt = newAmt*10;
     }
     if (selected2 == 'Centigram (cg)'){
-        endamt = newamt*100;
+        endAmt = newAmt*100;
     }
     if (selected2 == 'Milligram (mg)'){
-        endamt = newamt*1000;
+        endAmt = newAmt*1000;
     }
     if (selected2 == 'Microgram (&#181g)'){
-        endamt = newamt*1000000;
+        endAmt = newAmt*1000000;
     }
     if (selected2 == 'Nanogram (ng)'){
-        endamt = newamt*1000000000;
+        endAmt = newAmt*1000000000;
     }
     if (selected2 == 'Picogram (pg)'){
-        endamt = newamt*1000000000000;
+        endAmt = newAmt*1000000000000;
     }
     if (selected2 == 'Ounce (oz)'){
-        endamt = newamt/28.34952316484755;
+        endAmt = newAmt/28.34952316484755;
     }
     if (selected2 == 'Pound (lb)')
     {
-        endamt = newamt/453.5923703803783;
+        endAmt = newAmt/453.5923703803783;
     }
     if (selected2 == 'Ton (short ton-US)'){
-        endamt = newamt/907184.7407607567;
+        endAmt = newAmt/907184.7407607567;
     }
-    document.getElementById("mC_Result1").value = endamt;
+    document.getElementById("massVar").innerHTML = "<br>" + selected2;
+    document.getElementById("mC_Result1").value = endAmt;
     document.getElementById("mC_Result2").value = selected2;
+}
+
+function clearMassConversion(){
+    document.getElementById('mC_M1').value = '';
+    $('#mC_U1').val('mC_units').change();
+    $('#mC_U2').val('mC_units').change();
+    document.getElementById('mC_Result1').value = '';
+    document.getElementById('massVar').innerHTML = '';
+}
+
+function VolumeConversion(){
+    var selected1 = $("#vC_U1").val();
+    var selected2 = $("#vC_U2").val();
+    var amt = Number(document.getElementById('vC_V1').value);
+    var newAmt = 0;
+    var endAmt = 0;
+
+    if (selected1 == '1'){
+        newAmt = amt * 1000;
+    }
+    if (selected1 == '2'){
+        newAmt = amt * .001;
+    }
+    if (selected1 == '3'){
+        newAmt = amt * .000001;
+    }
+    if (selected1 == '4'){
+        newAmt = amt * .2365882;
+    }
+    if (selected1 == '5'){
+        newAmt = amt * 28.31685;
+    }
+    if (selected1 == '6'){
+        newAmt = amt * .01638706;
+    }
+    if (selected1 == '7'){
+        newAmt = amt * 7645549;
+    }
+    if (selected1 == '8'){
+        newAmt = amt * .02957353;
+    }
+    if (selected1 == '9'){
+        newAmt = amt * 3.785412;
+    }
+    if (selected1 == '10'){
+        newAmt = amt;
+    }
+    if (selected1 == '11'){
+        newAmt = amt * .001;
+    }
+    if (selected1 == '12'){
+        newAmt = amt * .4731765;
+    }
+    if (selected1 == '13'){
+        newAmt = amt * .946353;
+    }
+    if (selected1 == '14'){
+        newAmt = amt * .01478676;
+    }
+    if (selected1 == '15'){
+        newAmt = amt * .004928922;
+    }
+    if (selected2 == '1'){
+        endAmt = newAmt * .001;
+    }
+    if (selected2 == '2'){
+        endAmt = newAmt * 1000;
+    }
+    if (selected2 == '3'){
+        endAmt = newAmt * 1000000;
+    }
+    if (selected2 == '4'){
+        endAmt = newAmt * 4.22675349;
+    }
+    if (selected2 == '5'){
+        endAmt = newAmt * 0.03531466247;
+    }
+    if (selected2 == '6'){
+        endAmt = newAmt * 61.02375899;
+    }
+    if (selected2 == '7'){
+        endAmt = newAmt * 0.001307950547;
+    }
+    if (selected2 == '8'){
+        endAmt = newAmt * 33.8140222;
+    }
+    if (selected2 == '9'){
+        endAmt = newAmt * 0.2641720373;
+    }
+    if (selected2 == '10'){
+        endAmt = newAmt;
+    }
+    if (selected2 == '11'){
+        endAmt = newAmt * 1000;
+    }
+    if (selected2 == '12'){
+        endAmt = newAmt * 2.113376298;
+    }
+    if (selected2 == '13'){
+        endAmt = newAmt * 1.056688149;
+    }
+    if (selected2 == '14'){
+        endAmt = newAmt * 67.62806727;
+    }
+    if (selected2 == '15'){
+        endAmt = newAmt * 202.8841195;
+    }
+    document.getElementById("vC_Result1").value = Math.round(endAmt * 1000000) / 1000000;
+    document.getElementById("volVar").innerHTML = "<br>" + $('#vC_U2 option:selected').text();
+}
+
+function clearVolumeConversion(){
+    document.getElementById('vC_V1').value = '';
+    $('#vC_U1').val('vC_units').change();
+    $('#vC_U2').val('vC_units').change();
+    document.getElementById('vC_Result1').value = '';
+    document.getElementById('volVar').innerHTML = '';
+}
+
+function TimeConversion(){
+    var selected1 = $("#timeC_U1").val();
+    var selected2 = $("#timeC_U2").val();
+    var amt = Number(document.getElementById('timeC_T1').value);
+    var newAmt = 0;
+    var endAmt = 0;
+
+    if (selected1 == '1'){
+        newAmt = (((amt / 60) / 60) / 24);
+    }
+    if (selected1 == '2'){
+        newAmt = ((amt / 60) / 24) ;
+    }
+    if (selected1 == '3'){
+        newAmt = amt / 24;
+    }
+    if (selected1 == '4'){
+        newAmt = amt;
+    }
+    if (selected1 == '5'){
+        newAmt = amt * 7;
+    }
+    if (selected1 == '6'){
+        newAmt = ((amt * 365) / 12);
+    }
+    if (selected1 == '7'){
+        newAmt = amt * 365;
+    }
+    if (selected2 == '1'){
+        endAmt = newAmt * 24 * 60 * 60;
+    }
+    if (selected2 == '2'){
+        endAmt = newAmt * 24 * 60;
+    }
+    if (selected2 == '3'){
+        endAmt = newAmt * 24;
+    }
+    if (selected2 == '4'){
+        endAmt = newAmt;
+    }
+    if (selected2 == '5'){
+        endAmt = newAmt / 7;
+    }
+    if (selected2 == '6'){
+        endAmt = newAmt / 365 * 12;
+    }
+    if (selected2 == '7'){
+        endAmt = newAmt / 365;
+    }
+    document.getElementById("timeC_Result1").value = Math.round(endAmt * 1000000) / 1000000;
+    document.getElementById("timeVar").innerHTML = "<br>" + $('#timeC_U2 option:selected').text();
+}
+
+function clearTimeConversion(){
+    document.getElementById('timeC_T1').value = '';
+    $('#timeC_U1').val('tC_units').change();
+    $('#timeC_U2').val('tC_units').change();
+    document.getElementById('timeC_Result1').value = '';
+    document.getElementById('timeVar').innerHTML = '';
+
+}
+
+function TempConversion(){
+    var selected1 = $("#tempC_U1").val();
+    var selected2 = $("#tempC_U2").val();
+    var amt = Number(document.getElementById('tempC_T1').value);
+    var newAmt = 0;
+    var endAmt = 0;
+
+    if (selected1 == '1'){
+        newAmt = amt + 273.15;
+    }
+    if (selected1 == '2'){
+        newAmt = (amt + 459.67) * (5 / 9);
+    }
+    if (selected1 == '3'){
+        newAmt = amt;
+    }
+    if (selected1 == '4'){
+        newAmt = amt * (5 / 9);
+    }
+    if (selected1 == '5'){
+        newAmt = (373.15 - (amt * (2 / 3)));
+    }
+    if (selected1 == '6'){
+        newAmt = ((amt * (100 / 33)) + 273.15);
+    }
+    if (selected1 == '7'){
+        newAmt = ((amt * 5/4) + 273.15);
+    }
+    if (selected1 == '8'){
+        newAmt = (((amt-7.5) * (40 / 21)) + 273.15);
+    }
+    if (selected2 == '1'){
+        endAmt = newAmt - 273.15;
+    }
+    if (selected2 == '2'){
+        endAmt = ((newAmt * (9 / 5)) - 459.67);
+    }
+    if (selected2 == '3'){
+        endAmt = newAmt;
+    }
+    if (selected2 == '4'){
+        endAmt = (newAmt * (9 / 5));
+    }
+    if (selected2 == '5'){
+        endAmt = (373.15 - (newAmt * (3 / 2)));
+    }
+    if (selected2 == '6'){
+        endAmt = (newAmt - (273.15 * (33 / 100)));
+    }
+    if (selected2 == '7'){
+        endAmt = (newAmt - (273.15 * (4 / 5)));
+    }
+    if (selected2 == '8'){
+        endAmt = (((newAmt - 273.15) * (21 / 40)) + 7.5);
+    }
+    document.getElementById("tempC_Result1").value = Math.round(endAmt * 1000000) / 1000000;
+    document.getElementById("tempVar").innerHTML = "<br>" + $('#tempC_U2 option:selected').text();
+}
+
+function clearTempConversion(){
+    document.getElementById('tempC_T1').value = '';
+    $('#tempC_U1').val('tC_units').change();
+    $('#tempC_U2').val('tC_units').change();
+    document.getElementById('tempC_Result1').value = '';
+    document.getElementById('tempVar').innerHTML = '';
+}
+
+function DistanceConversion(){
+    var selected1 = $("#dC_U1").val();
+    var selected2 = $("#dC_U2").val();
+    var amt = Number(document.getElementById('dC_D1').value);
+    var newAmt = 0;
+    var endAmt = 0;
+
+    if (selected1 == '1'){
+        newAmt = amt * 1000000000000;
+    }
+    if (selected1 == '2'){
+        newAmt = amt * 1000000000;
+    }
+    if (selected1 == '3'){
+        newAmt = amt * 1000000;
+    }
+    if (selected1 == '4'){
+        newAmt = amt * 1000;
+    }
+    if (selected1 == '5'){
+        newAmt = amt * 100;
+    }
+    if (selected1 == '6'){
+        newAmt = amt * 10;
+    }
+    if (selected1 == '7'){
+        newAmt = amt;
+    }
+    if (selected1 == '8'){
+        newAmt = amt / 10;
+    }
+    if (selected1 == '9'){
+        newAmt = amt / 100;
+    }
+    if (selected1 == '10'){
+        newAmt = amt / 1000;
+    }
+    if (selected1 == '11'){
+        newAmt = amt / 1000000;
+    }
+    if (selected1 == '12'){
+        newAmt = amt / 1000000000;
+    }
+    if (selected1 == '13'){
+        newAmt = amt / 1000000000000;
+    }
+    if (selected1 == '14'){
+        newAmt = amt * .0254;
+    }
+    if (selected1 == '15'){
+        newAmt = amt * .3048;
+    }
+    if (selected1 == '16'){
+        newAmt = amt * .9144;
+    }
+    if (selected1 == '17'){
+        newAmt = amt * 1609.344;
+    }
+    if (selected1 == '18'){
+        newAmt = amt * 201.168;
+    }
+    if (selected1 == '19'){
+        newAmt = amt * 1852;
+    }
+    if (selected1 == '20'){
+        newAmt = amt * 1.8288;
+    }
+    if (selected1 == '21'){
+        newAmt = amt * 30856775810000000;
+    }
+    if (selected1 == '22'){
+        newAmt = amt * 9460730473000000;
+    }
+    if (selected2 == '1'){
+        endAmt = newAmt / 1000000000000;
+    }
+    if (selected2 == '2'){
+        endAmt = newAmt / 1000000000;
+    }
+    if (selected2 == '3'){
+        endAmt = newAmt / 1000000;
+    }
+    if (selected2 == '4'){
+        endAmt = newAmt / 1000;
+    }
+    if (selected2 == '5'){
+        endAmt = newAmt / 100;
+    }
+    if (selected2 == '6'){
+        endAmt = newAmt / 10;
+    }
+    if (selected2 == '7'){
+        endAmt = newAmt;
+    }
+    if (selected2 == '8'){
+        endAmt = newAmt * 10;
+    }
+    if (selected2 == '9'){
+        endAmt = newAmt * 100;
+    }
+    if (selected2 == '10'){
+        endAmt = newAmt * 1000;
+    }
+    if (selected2 == '11'){
+        endAmt = newAmt * 1000000;
+    }
+    if (selected2 == '12'){
+        endAmt = newAmt * 1000000000;
+    }
+    if (selected2 == '13'){
+        endAmt = newAmt * 1000000000000;
+    }
+    if (selected2 == '14'){
+        endAmt = newAmt * 39.37007874;
+    }
+    if (selected2 == '15'){
+        endAmt = newAmt * 3.280839895;
+    }
+    if (selected2 == '16'){
+        endAmt = newAmt * 1.093613298;
+    }
+    if (selected2 == '17'){
+        endAmt = newAmt * 0.0006213711922;
+    }
+    if (selected2 == '18'){
+        endAmt = newAmt * 0.004970969538;
+    }
+    if (selected2 == '19'){
+        endAmt = newAmt * 0.0005399568035;
+    }
+    if (selected2 == '20'){
+        endAmt = newAmt * 0.5468066492;
+    }
+    if (selected2 == '21'){
+        endAmt = newAmt * 324077929000000000;
+    }
+    if (selected2 == '22'){
+        endAmt = newAmt * 10570008340000000;
+    }
+    document.getElementById("dC_Result1").value = Math.round(endAmt * 1000000) / 1000000;
+    document.getElementById("disVar").innerHTML = "<br>" + $('#dC_U2 option:selected').text();
+}
+
+function clearDistanceConversion(){
+    document.getElementById('dC_D1').value = '';
+    $('#dC_U1').val('dC_units').change();
+    $('#dC_U2').val('dC_units').change();
+    document.getElementById('dC_Result1').value = '';
+    document.getElementById('disVar').innerHTML = '';
 }

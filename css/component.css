@@ -3,13 +3,8 @@
     position: fixed;
 }
 
-.cbp-spmenu h3 {
-    padding: 7px 20px 6px;
-    margin: 0;
-    background: #0d77b6;
-}
-
 .cbp-spmenu a {
+    text-align: left;
     display: block;
     color: #fff;
     font-size: 1.1em;
