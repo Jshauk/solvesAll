@@ -23,6 +23,7 @@
             $('.title').click(function(){
                 $(this).nextUntil('.title').slideToggle(500);
                 classie.remove(menuLeft, 'cbp-spmenu-open');
+                classie.toggle(this, 'opened-function');
             });
 
             $('#showLeft').click(function() {
