@@ -1,0 +1,147 @@
+@font-face {
+    font-family: 'Lato';
+    font-style: normal;
+    font-weight: 400;
+    src: url(../fonts/Lato/Lato-Regular.ttf) format('ttf');
+}
+
+
+body {
+    font-family: 'Lato', Calibri, Arial, sans-serif;
+    color: #47a3da;
+    padding: 0;
+    margin: 0;
+    text-align: center;
+}
+
+br{
+    display:inline-block !important;
+}
+
+.title{
+    text-align: center;
+    border-top: 1px solid;
+    padding-bottom: 10px;
+    padding-top: 10px;
+    margin: 0px;
+    /*font-size: 150% !important;*/
+    display: block;
+}
+.content{
+    border: 1px solid;
+    padding: 5px;
+    width: auto;
+    margin: 15px auto;
+    display: inline-block;
+    text-align: left;
+    /*font-size: 200%;*/
+}
+
+#header{
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 72px;
+    background-color: #258ECD;
+}
+
+#headerTitle{
+    height: 50px;
+    margin: 10px auto;
+}
+
+button{
+    background-color:#ffffff;
+    border-radius: 20px;
+    border:1px solid #47a4da;
+    color:#47a4da;
+    font-family:Arial;
+    font-size:15px;
+    height: auto;
+    width:100px;
+    text-align:center;
+    margin-top: 3px;
+    margin-bottom: 3px;
+}
+
+button:hover {
+    color: #ffffff;
+    background-color:#47a4da;
+}
+
+button:active {
+    text-decoration: none;
+    border: 0;
+}
+
+button::-moz-focus-inner {
+    border: 0;
+}
+
+a{
+    text-decoration: none;
+}
+
+#menuTitleImg{
+    height: 55px;
+    margin: 10px auto;
+}
+
+#menuTitle{
+    height: 55px;
+    margin: 0;
+    background: #0d77b6;
+}
+
+#showLeft{
+    height: 40px;
+    position: absolute;
+    left: 15px;
+    top: 15px;
+}
+
+.inline{
+    border: 1px solid;
+    padding: 5px;
+    margin: 15px auto;
+    display:inline-block;
+    -webkit-transition: all 0.3s linear;
+    -moz-transition: all 0.3s linear;
+    -o-transition: all 0.3s linear;
+    -ms-transition: all 0.3s linear;
+    transition: all 0.3s linear;
+}
+
+.customSelect {
+    width:150px;
+    display:block;
+    background:#fff url(../img/arrow.svg) right center no-repeat;
+    border: 1px solid;
+    border-radius: 20px;
+    margin: 5px 0 5px 0;
+}
+
+.customSelect.customSelectHover {
+    background:#47a3da url(../img/arrow2.svg) right center no-repeat;
+    color:white;
+}
+
+.customSelectInner {
+    margin-left: 5px;
+}
+
+.hasCustomSelect{
+    border-radius: 20px;
+    width: 150px !important;
+    height: 18px !important;
+}
+
+option{
+    background-color: white;
+    color: #47a3da;
+}
+option:focus{
+    background-color: #47a3da;
+    color: white;
+}

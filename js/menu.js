@@ -7,6 +7,7 @@ function showAll(){
 }
 
 function showAlgebra(){
+    closeFunctions();
     $('.physics').hide();
     $('.conversions').hide();
     $('.chemistry').hide();
@@ -14,6 +15,7 @@ function showAlgebra(){
 }
 
 function showPhysics(){
+    closeFunctions();
     $('.chemistry').hide();
     $('.algebra').hide();
     $('.conversions').hide();
@@ -21,6 +23,7 @@ function showPhysics(){
 }
 
 function showChemistry(){
+    closeFunctions();
     $('.physics').hide();
     $('.algebra').hide();
     $('.conversions').hide();
@@ -28,8 +31,13 @@ function showChemistry(){
 }
 
 function showConversions(){
+    closeFunctions();
     $('.physics').hide();
     $('.algebra').hide();
     $('.chemistry').hide();
     $('.conversions').show();
+}
+
+function closeFunctions(){
+    $('.opened-function').nextUntil('.title').hide();
 }
