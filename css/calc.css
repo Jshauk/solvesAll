@@ -1,0 +1,30 @@
+#calc{
+    display: none;
+    align-content: stretch;
+    position: absolute;
+    top:50%;
+    left:50%;
+    z-index: 1000000;
+    background-color: #258ECD;
+    padding: 10px;
+    border: white solid 5px;
+}
+
+#calc input{
+    width: 46px;
+    height: 25px;
+    margin: 5px;
+}
+
+
+#showCalc{
+    height: 60px;
+    position: absolute;
+    right: 15px;
+    top: 5px;
+    background-repeat: no-repeat;
+}
+
+.visible{
+    display: block !important;
+}

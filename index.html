@@ -5,11 +5,15 @@
     <title>solvesAll</title>
     <link rel="stylesheet" type="text/css" href="css/style.css" />
     <link rel="stylesheet" type="text/css" href="css/component.css" />
+    <link rel="stylesheet" type="text/css" href="css/calc.css" />
     <script src="js/jquery-1.10.2.js"></script>
+    <script src="js/jquery-ui.js"></script>
+    <script src="js/jquery-touch-punch.js"></script>
     <script src="js/modernizr.custom.js"></script>
     <script src="js/jquery.customSelect.min.js"></script>
     <script src="js/menu.js"></script>
     <script src="js/math.js"></script>
+    <script src="js/calc.js"></script>
     <script src="js/style.js"></script>
     <script src="js/classie.js"></script>
     <script>
@@ -17,8 +21,11 @@
         $(document).ready(function(){
 
             $('select').customSelect();
+//            $('#calc').draggable();
+            $('#calc').draggable({containment: 'parent'});
 
-            var menuLeft = document.getElementById( 'cbp-spmenu-s1' );
+            var menuLeft = document.getElementById( 'cbp-spmenu-s1'),
+                    calc = document.getElementById( 'calc' );
 
             $('.title').click(function(){
                 $(this).nextUntil('.title').slideToggle(500);
@@ -38,6 +45,11 @@
             $('#imgWrap').click(function(){
                 classie.remove(menuLeft, 'cbp-spmenu-open');
             });
+
+            $('#showCalc').click(function(){
+                classie.toggle(calc, 'visible');
+                calcStyle();
+            })
 
         });
 
@@ -59,6 +71,7 @@
         <div id="header">
                 <img id="showLeft" src='img/menu.svg'>
                 <img id="headerTitle" src="img/solvesAll.svg">
+                <img id="showCalc" src="img/calc.svg">
         </div>
 
         <div class="main">
@@ -480,5 +493,53 @@
         </div>
     </div>
 
+    <!-- Calculator -->
+    <div id="calc">
+        <form>
+            <input name="display" value="0" size=25 style="width:auto;" >
+            <br>
+            <input type="button" value="   exp  " onClick="if (checkNum(this.form.display.value))
+    { exp(this.form) }">
+            <input type="button" value="    7    " onClick="addChar(this.form.display, '7')">
+            <input type="button" value="    8    " onClick="addChar(this.form.display, '8')">
+            <input type="button" value="    9    " onClick="addChar(this.form.display, '9')">
+            <input type="button" value="    /    " onClick="addChar(this.form.display, '/')">
+            <br>
+            <input type="button" value="    ln    " onClick="if (checkNum(this.form.display.value))
+    { ln(this.form) }">
+            <input type="button" value="    4    " onClick="addChar(this.form.display, '4')">
+            <input type="button" value="    5    " onClick="addChar(this.form.display, '5')">
+            <input type="button" value="    6    " onClick="addChar(this.form.display, '6')">
+            <input type="button" value="    *    " onClick="addChar(this.form.display, '*')">
+            <br>
+            <input type="button" value="   sqrt  " onClick="if (checkNum(this.form.display.value))
+    { sqrt(this.form) }">
+            <input type="button" value="    1    " onClick="addChar(this.form.display, '1')">
+            <input type="button" value="    2    " onClick="addChar(this.form.display, '2')">
+            <input type="button" value="    3    " onClick="addChar(this.form.display, '3')">
+            <input type="button" value="    -    " onClick="addChar(this.form.display, '-')">
+            <br>
+            <input type="button" value="    sq   " onClick="if (checkNum(this.form.display.value))
+    { square(this.form) }">
+            <input type="button" value="   0     " onClick="addChar(this.form.display, '0')">
+            <input type="button" value="    .    " onClick="addChar(this.form.display, '.')">
+            <input type="button" value="   +/-   " onClick="changeSign(this.form.display)">
+            <input type="button" value="    +    " onClick="addChar(this.form.display, '+')">
+            <br>
+            <input type="button" value="    (    " onClick="addChar(this.form.display, '(')">
+            <input type="button" value="   cos   " onClick="if (checkNum(this.form.display.value))
+    { cos(this.form) }">
+            <input type="button" value="   sin   " onClick="if (checkNum(this.form.display.value))
+    { sin(this.form) }">
+            <input type="button" value="   tan   " onClick="if (checkNum(this.form.display.value))
+    { tan(this.form) }">
+            <input type="button" value="    )    " onClick="addChar(this.form.display, ')')">
+            <br>
+            <input type="button" style="width:auto;" value="  Clear  " onClick="this.form.display.value = 0 ">
+            <input type="button" style="width:auto;" value=" Back Space  " onClick="deleteChar(this.form.display)">
+            <input type="button" style="width:auto;" value="   Enter    " name="enter" onClick="if (checkNum(this.form.display.value))
+    { compute(this.form) }">
+        </form>
+    </div>
 </body>
 </html>
