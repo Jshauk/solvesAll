@@ -8,12 +8,24 @@
     background-color: #258ECD;
     padding: 10px;
     border: white solid 5px;
+    width: 332px !important;
 }
 
 #calc input{
     width: 46px;
     height: 25px;
     margin: 5px;
+    background-color:#ffffff;
+    border-radius: 20px;
+    border:1px solid #0D77B6;
+    color:#47a4da;
+    font-size:15px;
+    text-align:center;
+}
+
+#calc input:hover {
+    color: #ffffff;
+    background-color:#47a4da;
 }
 
 
