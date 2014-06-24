@@ -52,6 +52,7 @@ br{
 #headerTitle{
     height: 50px;
     margin: 10px auto;
+    width: 200px;
 }
 
 button{

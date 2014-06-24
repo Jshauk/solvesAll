@@ -30,11 +30,10 @@
 
 
 #showCalc{
-    height: 60px;
+    height: 40px;
     position: absolute;
     right: 15px;
-    top: 5px;
-    background-repeat: no-repeat;
+    top: 15px;
 }
 
 .visible{

@@ -15,7 +15,7 @@
     </author>
 
     <icon src="icon.png" />
-    <gap:splash src="splash.png" />
+    <gap:splash src="splash.png" gap:platform="android" />
 
     <!--<icon src="icon.png" gap:platform="android" gap:qualifier="ldpi" />-->
     <!--<icon src="icon.png" gap:platform="android" gap:qualifier="mdpi" />-->
