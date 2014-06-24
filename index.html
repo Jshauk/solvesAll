@@ -12,6 +12,7 @@
     <script src="js/modernizr.custom.js"></script>
     <script src="js/jquery.customSelect.min.js"></script>
     <script src="js/menu.js"></script>
+    <script src="js/FastClick.js"></script>
     <script src="js/math.js"></script>
     <script src="js/calc.js"></script>
     <script src="js/style.js"></script>
@@ -19,6 +20,29 @@
     <script>
 
         $(document).ready(function(){
+
+            $.event.special.tap = {
+                setup: function() {
+                    var self = this,
+                            $self = $(self);
+
+                    // Bind touch start
+                    $self.on('touchstart', function(startEvent) {
+                        // Save the target element of the start event
+                        var target = startEvent.target;
+
+                        // When a touch starts, bind a touch end handler exactly once,
+                        $self.one('touchend', function(endEvent) {
+                            // When the touch end event fires, check if the target of the
+                            // touch end is the same as the target of the start, and if
+                            // so, fire a click.
+                            if (target == endEvent.target) {
+                                $.event.simulate('tap', self, endEvent);
+                            }
+                        });
+                    });
+                }
+            };
 
             $('select').customSelect();
 //            $('#calc').draggable();
