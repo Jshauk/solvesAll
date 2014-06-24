@@ -15,8 +15,6 @@
     </author>
 
     <icon src="icon.png" />
-    <preference name="splash-screen-duration" value="6000" />
-    <plugin name="SplashScreen" value="org.apache.cordova.SplashScreen"/>
     <gap:splash src="splash.png" gap:platform="android" />
 
 
