@@ -100,7 +100,7 @@ a{
 }
 
 #showLeft{
-    background-image:  url('../img/menu.png');
+    background-image:  url('../img/menu.svg');
     background-position: 0,0;
     background-repeat: no-repeat;
     background-size: 40px, 40px;
