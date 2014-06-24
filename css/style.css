@@ -155,3 +155,7 @@ option:focus{
     background-color: #47a3da;
     color: white;
 }
+
+*{
+    -webkit-tap-highlight-color: transparent;
+}
