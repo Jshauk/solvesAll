@@ -100,7 +100,12 @@ a{
 }
 
 #showLeft{
+    background-image:  url('../img/menu.png');
+    background-position: 0,0;
+    background-repeat: no-repeat;
+    background-size: 40px, 40px;
     height: 40px;
+    width: 40px;
     position: absolute;
     left: 15px;
     top: 15px;

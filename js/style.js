@@ -7,12 +7,12 @@ $(window).bind("load", function() {
 //    while( x < 2){
 //        $('#header').css('height', '11%');
         var top = $('#header').css('height'),
-          width = $('#showLeft').css('height'),
+//          width = $('#showLeft').css('height'),
          height = $('#header').css('height');
 //         tall = $('input').css('height') * 2;
 
         $('.main').css('margin-top', top);
-        $('#showLeft').css('width', width);
+//        $('#showLeft').css('width', width);
         $('#menuTitle').css('height', height);
 //    $('input').css('height', tall);
 //        x = x + 2;
