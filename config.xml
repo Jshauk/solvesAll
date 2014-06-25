@@ -14,7 +14,7 @@
         Gavin Crenshaw
     </author>
 
-    <preference name="phonegap-version" value="3.5.0" />
+    <preference name="phonegap-version" value="3.3.0" />
     <preference name="auto-hide-splash-screen" value="false" />
 
     <gap:plugin name="org.apache.cordova.splashscreen" />
