@@ -19,13 +19,16 @@
     <script src="js/classie.js"></script>
     <script>
 
+        document.addEventListener("deviceready", onDeviceReady, false);
+
+        setTimeout(function() {
+            navigator.splashscreen.hide();
+        }, 2000);
+
+
         $(document).ready(function(){
 
-            document.addEventListener("deviceready", function(e) {
-                window.setTimeout(function() {
-                    navigator.splashscreen.hide();
-                },5000);
-            }, "false");
+
 
             window.addEventListener('load', function() {
                 FastClick.attach(document.body);
