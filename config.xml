@@ -14,8 +14,12 @@
         Gavin Crenshaw
     </author>
 
-    <icon src="icon.png" />
+    <preference name="phonegap-version" value="3.5.0" />
     <preference name="auto-hide-splash-screen" value="false" />
+
+    <gap:plugin name="org.apache.cordova.splashscreen" />
+
+    <icon src="icon.png" />
     <gap:splash src="splash.png" gap:platform="android" />
 
 
