@@ -1,0 +1,25 @@
+/home/gavin/Projects/solvesAll/solvesAll/platforms/android/ant-build/classes.dex : \
+/home/gavin/Projects/solvesAll/solvesAll/platforms/android/ant-build/classes/com/phonegap/helloworld/R$string.class \
+/home/gavin/Projects/solvesAll/solvesAll/platforms/android/ant-build/classes/com/phonegap/helloworld/R$xml.class \
+/home/gavin/Projects/solvesAll/solvesAll/platforms/android/ant-build/classes/com/phonegap/helloworld/R.class \
+/home/gavin/Projects/solvesAll/solvesAll/platforms/android/ant-build/classes/com/phonegap/helloworld/BuildConfig.class \
+/home/gavin/Projects/solvesAll/solvesAll/platforms/android/ant-build/classes/com/phonegap/helloworld/R$drawable.class \
+/home/gavin/Projects/solvesAll/solvesAll/platforms/android/ant-build/classes/com/phonegap/helloworld/HelloWorld.class \
+/home/gavin/Projects/solvesAll/solvesAll/platforms/android/ant-build/classes/com/phonegap/helloworld/R$attr.class \
+/home/gavin/Projects/solvesAll/solvesAll/platforms/android/ant-build/classes/com/google/cordova/plugin/AdMobPlugin.class \
+/home/gavin/Projects/solvesAll/solvesAll/platforms/android/ant-build/classes/com/google/cordova/plugin/AdMobPlugin$5.class \
+/home/gavin/Projects/solvesAll/solvesAll/platforms/android/ant-build/classes/com/google/cordova/plugin/AdMobPlugin$BannerListener.class \
+/home/gavin/Projects/solvesAll/solvesAll/platforms/android/ant-build/classes/com/google/cordova/plugin/AdMobPlugin$3.class \
+/home/gavin/Projects/solvesAll/solvesAll/platforms/android/ant-build/classes/com/google/cordova/plugin/AdMobPlugin$2.class \
+/home/gavin/Projects/solvesAll/solvesAll/platforms/android/ant-build/classes/com/google/cordova/plugin/AdMobPlugin$4.class \
+/home/gavin/Projects/solvesAll/solvesAll/platforms/android/ant-build/classes/com/google/cordova/plugin/AdMobPlugin$1.class \
+/home/gavin/Projects/solvesAll/solvesAll/platforms/android/ant-build/classes/com/aestheticdevelopment/solvesAll/R$string.class \
+/home/gavin/Projects/solvesAll/solvesAll/platforms/android/ant-build/classes/com/aestheticdevelopment/solvesAll/R$xml.class \
+/home/gavin/Projects/solvesAll/solvesAll/platforms/android/ant-build/classes/com/aestheticdevelopment/solvesAll/R.class \
+/home/gavin/Projects/solvesAll/solvesAll/platforms/android/ant-build/classes/com/aestheticdevelopment/solvesAll/BuildConfig.class \
+/home/gavin/Projects/solvesAll/solvesAll/platforms/android/ant-build/classes/com/aestheticdevelopment/solvesAll/R$drawable.class \
+/home/gavin/Projects/solvesAll/solvesAll/platforms/android/ant-build/classes/com/aestheticdevelopment/solvesAll/HelloWorld.class \
+/home/gavin/Projects/solvesAll/solvesAll/platforms/android/ant-build/classes/com/aestheticdevelopment/solvesAll/R$attr.class \
+/home/gavin/Projects/solvesAll/solvesAll/platforms/android/ant-build/classes/org/apache/cordova/splashscreen/SplashScreen.class \
+/home/gavin/Projects/solvesAll/solvesAll/platforms/android/ant-build/dexedLibs/classes-e0744b343a40b0df2e2cc69ae2f9df92.jar \
+/home/gavin/Projects/solvesAll/solvesAll/platforms/android/ant-build/dexedLibs/GoogleAdMobAdsSdk-6.4.1-478c876ae1cde60a466cec3f970328a9.jar \
