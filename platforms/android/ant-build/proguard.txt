@@ -1,6 +1,6 @@
 # view AndroidManifest.xml #generated:6
--keep class com.aestheticdevelopment.solvesAll.HelloWorld { <init>(...); }
+-keep class com.aestheticdevelopment.solvesAll.solvesAllCLI { <init>(...); }
 
-# view AndroidManifest.xml #generated:12
--keep class com.google.ads.AdActivity { <init>(...); }
+# view AndroidManifest.xml #generated:13
+-keep class com.google.android.gms.ads.AdActivity { <init>(...); }
 

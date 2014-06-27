@@ -3,6 +3,7 @@
  */
 
 function showAll(){
+    closeFunctions();
     $('.title').show();
 }
 

@@ -20,6 +20,12 @@ br{
     display:inline-block !important;
 }
 
+input{
+    border:1px solid #47a4da;
+    background-color:#ffffff;
+    color:#47a4da;
+}
+
 .title{
     text-align: center;
     border-top: 1px solid;

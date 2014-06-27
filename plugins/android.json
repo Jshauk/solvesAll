@@ -9,7 +9,7 @@
                 "parents": {
                     "/*": [
                         {
-                            "xml": "<feature name=\"AdMobPlugin\"><param name=\"android-package\" value=\"com.google.cordova.plugin.AdMobPlugin\" /></feature>",
+                            "xml": "<feature name=\"Device\"><param name=\"android-package\" value=\"org.apache.cordova.device.Device\" /></feature>",
                             "count": 1
                         },
                         {
@@ -17,7 +17,7 @@
                             "count": 1
                         },
                         {
-                            "xml": "<feature name=\"Device\"><param name=\"android-package\" value=\"org.apache.cordova.device.Device\" /></feature>",
+                            "xml": "<feature name=\"AdMob\"><param name=\"android-package\" value=\"com.rjfun.cordova.plugin.AdMob\" /></feature>",
                             "count": 1
                         }
                     ]
@@ -27,17 +27,17 @@
                 "parents": {
                     "/manifest/application": [
                         {
-                            "xml": "<activity android:configChanges=\"keyboard|keyboardHidden|orientation|screenLayout|uiMode|screenSize|smallestScreenSize\" android:name=\"com.google.ads.AdActivity\" />",
+                            "xml": "<meta-data android:name=\"com.google.android.gms.version\" android:value=\"@integer/google_play_services_version\" />",
+                            "count": 2
+                        },
+                        {
+                            "xml": "<activity android:configChanges=\"keyboard|keyboardHidden|orientation|screenLayout|uiMode|screenSize|smallestScreenSize\" android:name=\"com.google.android.gms.ads.AdActivity\" />",
                             "count": 1
                         }
                     ],
                     "/*": [
                         {
                             "xml": "<uses-permission android:name=\"android.permission.INTERNET\" />",
-                            "count": 1
-                        },
-                        {
-                            "xml": "<uses-permission android:name=\"android.permission.WRITE_EXTERNAL_STORAGE\" />",
                             "count": 1
                         },
                         {
@@ -50,13 +50,16 @@
         }
     },
     "installed_plugins": {
-        "com.google.cordova.plugin.AdMobPlugin": {
-            "PACKAGE_NAME": "com.phonegap.helloworld"
+        "org.apache.cordova.device": {
+            "PACKAGE_NAME": "com.aestheticdevelopment.solvesAll"
         },
         "org.apache.cordova.splashscreen": {
-            "PACKAGE_NAME": "com.phonegap.helloworld"
+            "PACKAGE_NAME": "com.aestheticdevelopment.solvesAll"
         },
-        "org.apache.cordova.device": {
+        "com.google.playservices": {
+            "PACKAGE_NAME": "com.aestheticdevelopment.solvesAll"
+        },
+        "com.rjfun.cordova.plugin.admob": {
             "PACKAGE_NAME": "com.aestheticdevelopment.solvesAll"
         }
     },

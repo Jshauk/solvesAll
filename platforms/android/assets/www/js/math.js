@@ -1,7 +1,3 @@
-var mathjs = require('mathjs'),
-    math = mathjs();
-    var doc = document;
-
 function quadraticX()
 {
 	//x=-b+sqr((b^2)-(4ac))/2a || x=-b-sqr((b^2)-(4ac))/2a
