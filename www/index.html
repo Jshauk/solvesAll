@@ -6,6 +6,7 @@
     <link rel="stylesheet" type="text/css" href="css/style.css" />
     <link rel="stylesheet" type="text/css" href="css/component.css" />
     <link rel="stylesheet" type="text/css" href="css/calc.css" />
+    <script src="cordova.js"></script>
     <script src="js/jquery-1.10.2.js"></script>
     <script src="js/jquery-ui.js"></script>
     <script src="js/jquery-touch-punch.js"></script>
@@ -13,164 +14,164 @@
     <script src="js/jquery.customSelect.min.js"></script>
     <script src="js/menu.js"></script>
     <script src="js/FastClick.js"></script>
-    <script src="cordova.js"></script>
     <script src="js/math.js"></script>
     <script src="js/index.js"></script>
     <script src="js/calc.js"></script>
     <script src="js/style.js"></script>
     <script src="js/classie.js"></script>
-    <script>
-        var admob_ios_key = 'ca-app-pub-6869992474017983/4806197152';
-        var admob_android_key = 'ca-app-pub-6869992474017983/9375997553';
-        var adId = (navigator.userAgent.indexOf('Android') >=0) ? admob_android_key : admob_ios_key;
-
-        function onLoad() {
-            document.addEventListener("deviceready", onDeviceReady, false);
-
-            // more callback to handle Ad events
-            document.addEventListener('onReceiveAd', function(){
-            });
-            document.addEventListener('onFailedToReceiveAd', function(data){
-            });
-            document.addEventListener('onPresentAd', function(){
-            });
-            document.addEventListener('onDismissAd', function(){
-            });
-            document.addEventListener('onLeaveToAd', function(){
-            });
-        }
-        function createAd() {
-            if ( window.plugins && window.plugins.AdMob ) {
-                var am = window.plugins.AdMob;
-                am.createBannerView(
-                        {
-                            'publisherId': adId,
-                            'adSize': am.AD_SIZE.BANNER,
-                            'bannerAtTop': true
-                        }, function() {
-                            am.requestAd( { 'isTesting':true }, function() {
-                                am.showAd( true );
-                            }, function() {
-                                alert('failed to request ad');
-                            })
-                        }, function(){
-                            alert( "failed to create ad view" );
-                        });
 
 
-            } else {
-                alert('AdMob plugin not available/ready.');
-            }
-        }
-        function removeAd() {
-            if ( window.plugins && window.plugins.AdMob ) {
-                var am = window.plugins.AdMob;
-                am.destroyBannerView();
-            }
-
-        }
-        function onDeviceReady() {
-            createAd();
-        }
-        function showAd( bshow ) {
-            if ( window.plugins && window.plugins.AdMob ) {
-                var am = window.plugins.AdMob;
-                am.showAd( bshow, function(){}, function(){ alert('please create ad first'); } );
-            } else {
-                alert('AdMob plugin not available/ready.');
-            }
-        }
-        function showInterstitialAd() {
-            var am = window.plugins.AdMob;
-            am.createInterstitialView(
-                    {
-                        'publisherId': adId,
-                    },
-                    function() {
-                        am.requestInterstitialAd( { 'isTesting':true }, function() {}, function() {
-                            alert('failed to request ad');
-                        });
-                    },
-                    function() {
-                        alert("Interstitial failed");
-                    }
-            );
-        }
-        function onResize() {
-            var msg = 'web view: ' + window.innerWidth + ' x ' + window.innerHeight;
-            document.getElementById('sizeinfo').innerHTML = msg;
-        }
-    </script>
-    <script>
-        app.initialize();
-        $(document).ready(function(){
-
-//
-           document.addEventListener("deviceready", onDeviceReady, false);
-//
-            setTimeout(function() {
-                navigator.splashscreen.hide();
-            }, 2000);
-
-            window.addEventListener('load', function() {
-                FastClick.attach(document.body);
-            }, false);
-
-            $('select').customSelect();
-            $('#calc').draggable({containment: 'parent'});
-
-            var menuLeft = document.getElementById( 'cbp-spmenu-s1'),
-                    calc = document.getElementById( 'calc' );
-
-            document.addEventListener("menubutton", onMenuKeyDown, false);
-            document.addEventListener("backbutton", onBackKeyDown, false);
-
-            function onBackKeyDown() {
-                if($('#showLeft').hasClass('active')){
-                    classie.toggle( $('#showLeft'), 'active' );
-                    classie.toggle( menuLeft, 'cbp-spmenu-open' );
-                }
-                if(calc.hasClass('visible')){
-                    classie.toggle(calc, 'visible');
-                    calcStyle();
-                }
-            }
-
-            function onMenuKeyDown() {
-                    classie.toggle( $('#showLeft'), 'active' );
-                    classie.toggle( menuLeft, 'cbp-spmenu-open' );
-            }
-
-            $('.title').click(function(){
-                $(this).nextUntil('.title').slideToggle(500);
-                classie.remove(menuLeft, 'cbp-spmenu-open');
-                classie.toggle(this, 'opened-function');
-            });
-
-            $('#showLeft').click(function() {
-                classie.toggle( this, 'active' );
-                classie.toggle( menuLeft, 'cbp-spmenu-open' );
-            });
-
-            $('#cbp-spmenu-s1').click(function(){
-                classie.toggle(menuLeft, 'cbp-spmenu-open');
-            });
-
-            $('#imgWrap').click(function(){
-                classie.remove(menuLeft, 'cbp-spmenu-open');
-            });
-
-            $('#showCalc').click(function(){
-                classie.toggle(calc, 'visible');
-                calcStyle();
-            })
-
-        });
-
-    </script>
 
 </head>
-<body class="cbp-spmenu-push">
+<body class="cbp-spmenu-push" onload="onLoad()">
+<script>
+
+    $(document).ready(function(){
+
+        document.addEventListener("deviceready", onDeviceReady, false);
+
+        function onDeviceReady(){
+            document.addEventListener("menubutton", onMenuKeyDown, false);
+            document.addEventListener("backbutton", onBackKeyDown, false);
+        }
+
+//        setTimeout(function() {
+//            navigator.splashscreen.hide();
+//        }, 2000);
+
+        window.addEventListener('load', function() {
+            FastClick.attach(document.body);
+        }, false);
+
+        $('select').customSelect();
+        $('#calc').draggable({containment: 'parent'});
+
+        var menuLeft = document.getElementById('cbp-spmenu-s1'),
+                calc = document.getElementById('calc'),
+            showLeft = document.getElementById('showLeft');
+
+
+        function onBackKeyDown() {
+                classie.remove( showLeft, 'active' );
+                classie.remove( menuLeft, 'cbp-spmenu-open' );
+                classie.remove(calc, 'visible');
+        }
+
+        function onMenuKeyDown() {
+            classie.toggle(showLeft, 'active');
+            classie.toggle(menuLeft, 'cbp-spmenu-open');
+        }
+
+        $('.title').click(function(){
+            $(this).nextUntil('.title').slideToggle(500);
+            classie.remove(menuLeft, 'cbp-spmenu-open');
+            classie.toggle(this, 'opened-function');
+        });
+
+        $('#showLeft').click(function() {
+            classie.toggle( this, 'active' );
+            classie.toggle( menuLeft, 'cbp-spmenu-open' );
+        });
+
+        $('#cbp-spmenu-s1').click(function(){
+            classie.toggle(menuLeft, 'cbp-spmenu-open');
+        });
+
+        $('#imgWrap').click(function(){
+            classie.remove(menuLeft, 'cbp-spmenu-open');
+        });
+
+        $('#showCalc').click(function(){
+            classie.toggle(calc, 'visible');
+            calcStyle();
+        })
+
+    });
+
+</script>
+
+<script>
+    var admob_ios_key = 'ca-app-pub-6869992474017983/4806197152';
+    var admob_android_key = 'ca-app-pub-6869992474017983/9375997553';
+    var adId = (navigator.userAgent.indexOf('Android') >=0) ? admob_android_key : admob_ios_key;
+
+    function onLoad() {
+        document.addEventListener("deviceready", onDeviceReady, false);
+
+        // more callback to handle Ad events
+        document.addEventListener('onReceiveAd', function(){
+        });
+        document.addEventListener('onFailedToReceiveAd', function(data){
+        });
+        document.addEventListener('onPresentAd', function(){
+        });
+        document.addEventListener('onDismissAd', function(){
+        });
+        document.addEventListener('onLeaveToAd', function(){
+        });
+    }
+    function createAd() {
+        if ( window.plugins && window.plugins.AdMob ) {
+            var am = window.plugins.AdMob;
+            am.createBannerView(
+                    {
+                        'publisherId': adId,
+                        'adSize': am.AD_SIZE.BANNER,
+                        'bannerAtTop': false
+                    }, function() {
+                        am.requestAd( { 'isTesting':true }, function() {
+                            am.showAd( true );
+                        }, function() {
+                            alert('failed to request ad');
+                        })
+                    }, function(){
+                        alert( "failed to create ad view" );
+                    });
+
+
+        } else {
+            alert('AdMob plugin not available/ready.');
+        }
+    }
+    function removeAd() {
+        if ( window.plugins && window.plugins.AdMob ) {
+            var am = window.plugins.AdMob;
+            am.destroyBannerView();
+        }
+
+    }
+    function onDeviceReady() {
+        createAd();
+    }
+    function showAd( bshow ) {
+        if ( window.plugins && window.plugins.AdMob ) {
+            var am = window.plugins.AdMob;
+            am.showAd( bshow, function(){}, function(){ alert('please create ad first'); } );
+        } else {
+            alert('AdMob plugin not available/ready.');
+        }
+    }
+   /* function showInterstitialAd() {
+        var am = window.plugins.AdMob;
+        am.createInterstitialView(
+                {
+                    'publisherId': adId
+                },
+                function() {
+                    am.requestInterstitialAd( { 'isTesting':true }, function() {}, function() {
+                        alert('failed to request ad');
+                    });
+                },
+                function() {
+                    alert("Interstitial failed");
+                }
+        );
+    }*/
+    function onResize() {
+        var msg = 'web view: ' + window.innerWidth + ' x ' + window.innerHeight;
+        document.getElementById('sizeinfo').innerHTML = msg;
+    }
+</script>
 
     <nav class="cbp-spmenu cbp-spmenu-vertical cbp-spmenu-left" id="cbp-spmenu-s1">
         <div id="menuTitle"><img id="menuTitleImg" src="img/menuTitle.svg"></div>
@@ -186,7 +187,7 @@
         <div id="header">
                 <div id="showLeft"></div>
                 <img id="headerTitle" src="img/solvesAll.png">
-                <img id="showCalc" src="img/calc.svg">
+                <img id="showCalc" src="img/calc.png">
         </div>
 
         <div class="main">
@@ -290,7 +291,7 @@
             <h3 id="pE" class='title chemistry'> Percentage Error </h3>
             <div id='percentageError' class="content" style="display: none">
 
-                Approximate Value: <input id='pEaV' type='text'><br>
+                Your Value: <input id='pEaV' type='text'><br>
                 Exact Value: <input name='eV' id='pEeV' type='text'><br>
                 <button type="button" onclick='percentageError()'>Solve</button>
                 <button type="button" onclick='clearPercentageError()'>Clear</button><br>
