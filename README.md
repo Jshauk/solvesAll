@@ -5,7 +5,7 @@ A JavaScript application with the goal of solving all math problems simply and q
 
 <img src="http://fc04.deviantart.net/fs70/f/2014/144/f/5/solvesall_by_jshauk-d7jkjnv.jpg">
 
-### Draggable Calculator!
+### Slideout Calculator!
 ### Current Solves
 + Quadratic Formula
 + Reference Angle
