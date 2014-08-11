@@ -23,7 +23,6 @@
     <script src="js/router.js"></script>
     <script src="js/jquery.touchSwipe.min.js"></script>
 
-
 </head>
 <body class="cbp-spmenu-push" onload="onLoad()" id="body">
 
@@ -37,9 +36,9 @@
             document.addEventListener("backbutton", onBackKeyDown, false);
         }
 
-//        setTimeout(function() {
-//            navigator.splashscreen.hide();
-//        }, 2000);
+        setTimeout(function() {
+            navigator.splashscreen.hide();
+        }, 2000);
 
         window.addEventListener('load', function() {
             FastClick.attach(document.body);
@@ -69,8 +68,9 @@
 
         $('.title').click(function(){
             $(this).nextUntil('.title').slideToggle(500);
-            classie.remove(menuLeft, 'cbp-spmenu-open');
+            classie.toggle(this, 'none', 500);
             classie.toggle(this, 'opened-function');
+            classie.remove(menuLeft, 'cbp-spmenu-open');
         });
 
         $('#showLeft').click(function() {
@@ -142,18 +142,19 @@
     var adId = (navigator.userAgent.indexOf('Android') >=0) ? admob_android_key : admob_ios_key;
 
     function onLoad() {
-        document.addEventListener("deviceready", onDeviceReady, false);
+        document
+                .addEventListener("deviceready", onDeviceReady, false)
 
         // more callback to handle Ad events
-        document.addEventListener('onReceiveAd', function(){
-        });
-        document.addEventListener('onFailedToReceiveAd', function(data){
-        });
-        document.addEventListener('onPresentAd', function(){
-        });
-        document.addEventListener('onDismissAd', function(){
-        });
-        document.addEventListener('onLeaveToAd', function(){
+                .addEventListener('onReceiveAd', function(){
+        })
+                .addEventListener('onFailedToReceiveAd', function(data){
+        })
+                .addEventListener('onPresentAd', function(){
+        })
+                .addEventListener('onDismissAd', function(){
+        })
+                .addEventListener('onLeaveToAd', function(){
         });
     }
     function createAd() {
@@ -692,53 +693,5 @@
         </div>
     </div>
 
-    <!-- Calculator -->
-    <!--<div id="calc">-->
-        <!--<form>-->
-            <!--<input name="display" value="0" size=25 style="width:auto;" >-->
-            <!--<br>-->
-            <!--<input type="button" value="   exp  " onClick="if (checkNum(this.form.display.value))-->
-    <!--{ exp(this.form) }">-->
-            <!--<input type="button" value="    7    " onClick="addChar(this.form.display, '7')">-->
-            <!--<input type="button" value="    8    " onClick="addChar(this.form.display, '8')">-->
-            <!--<input type="button" value="    9    " onClick="addChar(this.form.display, '9')">-->
-            <!--<input type="button" value="    /    " onClick="addChar(this.form.display, '/')">-->
-            <!--<br>-->
-            <!--<input type="button" value="    ln    " onClick="if (checkNum(this.form.display.value))-->
-    <!--{ ln(this.form) }">-->
-            <!--<input type="button" value="    4    " onClick="addChar(this.form.display, '4')">-->
-            <!--<input type="button" value="    5    " onClick="addChar(this.form.display, '5')">-->
-            <!--<input type="button" value="    6    " onClick="addChar(this.form.display, '6')">-->
-            <!--<input type="button" value="    *    " onClick="addChar(this.form.display, '*')">-->
-            <!--<br>-->
-            <!--<input type="button" value="   sqrt  " onClick="if (checkNum(this.form.display.value))-->
-    <!--{ sqrt(this.form) }">-->
-            <!--<input type="button" value="    1    " onClick="addChar(this.form.display, '1')">-->
-            <!--<input type="button" value="    2    " onClick="addChar(this.form.display, '2')">-->
-            <!--<input type="button" value="    3    " onClick="addChar(this.form.display, '3')">-->
-            <!--<input type="button" value="    -    " onClick="addChar(this.form.display, '-')">-->
-            <!--<br>-->
-            <!--<input type="button" value="    sq   " onClick="if (checkNum(this.form.display.value))-->
-    <!--{ square(this.form) }">-->
-            <!--<input type="button" value="   0     " onClick="addChar(this.form.display, '0')">-->
-            <!--<input type="button" value="    .    " onClick="addChar(this.form.display, '.')">-->
-            <!--<input type="button" value="   +/-   " onClick="changeSign(this.form.display)">-->
-            <!--<input type="button" value="    +    " onClick="addChar(this.form.display, '+')">-->
-            <!--<br>-->
-            <!--<input type="button" value="    (    " onClick="addChar(this.form.display, '(')">-->
-            <!--<input type="button" value="   cos   " onClick="if (checkNum(this.form.display.value))-->
-    <!--{ cos(this.form) }">-->
-            <!--<input type="button" value="   sin   " onClick="if (checkNum(this.form.display.value))-->
-    <!--{ sin(this.form) }">-->
-            <!--<input type="button" value="   tan   " onClick="if (checkNum(this.form.display.value))-->
-    <!--{ tan(this.form) }">-->
-            <!--<input type="button" value="    )    " onClick="addChar(this.form.display, ')')">-->
-            <!--<br>-->
-            <!--<input type="button" style="width:auto;" value="  Clear  " onClick="this.form.display.value = 0 ">-->
-            <!--<input type="button" style="width:auto;" value=" Back Space  " onClick="deleteChar(this.form.display)">-->
-            <!--<input type="button" style="width:auto;" value="   Enter    " name="enter" onClick="if (checkNum(this.form.display.value))-->
-    <!--{ compute(this.form) }">-->
-        <!--</form>-->
-    <!--</div>-->
 </body>
 </html>

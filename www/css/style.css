@@ -42,6 +42,7 @@ input{
     display: block;
     cursor:pointer;
 }
+
 .content{
     border: 1px solid;
     padding: 5px;
@@ -54,7 +55,7 @@ input{
 #header{
     position: fixed;
     width: 100%;
-    height: 72px;
+    height: 50px;
     background-color: #258ECD;
     -webkit-transition: all 0.3s ease;
     -moz-transition: all 0.3s ease;
@@ -69,9 +70,9 @@ input{
 }
 
 #headerTitle{
-    height: 50px;
-    margin: 10px auto;
-    width: 200px;
+    height: 38px;
+    margin: 5px auto;
+    width: 175px;
 }
 
 button{
@@ -108,8 +109,8 @@ a{
 }
 
 #menuTitleImg{
-    height: 55px;
-    margin: 10px auto;
+    height: 40px;
+    margin: 5px auto;
 }
 
 #menuTitle{
@@ -122,12 +123,12 @@ a{
     background-image:  url('../img/menu.png');
     background-position: 0,0;
     background-repeat: no-repeat;
-    background-size: 40px, 40px;
-    height: 40px;
-    width: 40px;
+    background-size: 30px, 30px;
+    height: 30px;
+    width: 30px;
     position: absolute;
-    left: 15px;
-    top: 15px;
+    left: 10px;
+    top: 10px;
 }
 
 .customSelect {
@@ -166,3 +167,4 @@ option:focus{
 *{
     -webkit-tap-highlight-color: transparent;
 }
+

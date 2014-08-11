@@ -4,9 +4,9 @@
 $(document).ready(function() {
 
         var top = $('#header').css('height'),
-         height = $('#header').css('height');
+           top1 = top + 1;
         $('.main').css('margin-top', top);
-        $('#menuTitle').css('height', height);
+        $('#menuTitle').css('height', top);
 
 //        var allWidth = $('body').css('width');
 //        $('.showRight').css('left', allWidth);
