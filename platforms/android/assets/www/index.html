@@ -16,53 +16,49 @@
     <script src="js/FastClick.js"></script>
     <script src="js/math.js"></script>
     <script src="js/index.js"></script>
-    <script src="js/calc.js"></script>
     <script src="js/style.js"></script>
     <script src="js/classie.js"></script>
-
-
+    <script src="js/calculator.js"></script>
+    <script src="js/ready.js"></script>
+    <script src="js/router.js"></script>
+    <script src="js/jquery.touchSwipe.min.js"></script>
 
 </head>
-<body class="cbp-spmenu-push" onload="onLoad()">
-<script>
-    app.initialize();
-    $(document).ready(function(){
+<body class="cbp-spmenu-push" onload="onLoad()" id="body">
 
-//
+<script>
+    $(document).ready(function(){
 
         document.addEventListener("deviceready", onDeviceReady, false);
 
-
-//
         function onDeviceReady(){
             document.addEventListener("menubutton", onMenuKeyDown, false);
             document.addEventListener("backbutton", onBackKeyDown, false);
         }
 
-//        setTimeout(function() {
-//            navigator.splashscreen.hide();
-//        }, 2000);
+        setTimeout(function() {
+            navigator.splashscreen.hide();
+        }, 2000);
 
         window.addEventListener('load', function() {
             FastClick.attach(document.body);
         }, false);
 
         $('select').customSelect();
-        $('#calc').draggable({containment: 'parent'});
 
         var menuLeft = document.getElementById('cbp-spmenu-s1'),
-                calc = document.getElementById('calc'),
-            showLeft = document.getElementById('showLeft');
+                calc = document.getElementById('rim'),
+            showLeft = document.getElementById('showLeft'),
+           container = document.getElementById('container'),
+              header = document.getElementById('header');
 
 
         function onBackKeyDown() {
-//            if(showLeft.hasClass('active')){
                 classie.remove( showLeft, 'active' );
                 classie.remove( menuLeft, 'cbp-spmenu-open' );
-//            }
-//            if(calc.hasClass('visible')){
                 classie.remove(calc, 'visible');
-//            }
+                classie.remove(container, 'hideRight');
+                classie.remove(header, 'hideRight');
         }
 
         function onMenuKeyDown() {
@@ -72,8 +68,9 @@
 
         $('.title').click(function(){
             $(this).nextUntil('.title').slideToggle(500);
-            classie.remove(menuLeft, 'cbp-spmenu-open');
+            classie.toggle(this, 'none', 500);
             classie.toggle(this, 'opened-function');
+            classie.remove(menuLeft, 'cbp-spmenu-open');
         });
 
         $('#showLeft').click(function() {
@@ -91,9 +88,50 @@
 
         $('#showCalc').click(function(){
             classie.toggle(calc, 'visible');
-            calcStyle();
-        })
+            classie.toggle(calc, 'active');
+            classie.toggle(container, 'hideRight');
+            classie.toggle(header, 'hideRight');
+        });
 
+        $('#container').swipe( {
+            swipeLeft:function(event, direction, distance, duration, fingerCount)
+            {
+                if(!$('#rim').hasClass('active')){
+                    classie.add(calc, 'visible');
+                    classie.add(calc, 'active');
+                    classie.add(container, 'hideRight');
+                    classie.add(header, 'hideRight');
+                    console.log(event, direction, distance, duration, fingerCount)
+                }
+                if($('#cbp-spmenu-open').hasClass('active')){
+                    classie.remove( showLeft, 'active' );
+                    classie.remove( menuLeft, 'cbp-spmenu-open' );
+                    console.log(event, direction, distance, duration, fingerCount)
+                }
+            }
+        });
+
+        $('#container').swipe( {
+            swipeRight:function(event, direction, distance, duration, fingerCount)
+            {
+                classie.add( showLeft, 'active' );
+                classie.add( menuLeft, 'cbp-spmenu-open' );
+                console.log(event, direction, distance, duration, fingerCount)
+            }
+        });
+
+        $('#rim').swipe( {
+            swipeRight:function(event, direction, distance, duration, fingerCount)
+            {
+                if($('#rim').hasClass('active')){
+                    classie.remove(calc, 'visible');
+                    classie.remove(calc, 'active');
+                    classie.remove(container, 'hideRight');
+                    classie.remove(header, 'hideRight');
+                    console.log(event, direction, distance, duration, fingerCount)
+                }
+            }
+        });
     });
 
 </script>
@@ -104,18 +142,19 @@
     var adId = (navigator.userAgent.indexOf('Android') >=0) ? admob_android_key : admob_ios_key;
 
     function onLoad() {
-        document.addEventListener("deviceready", onDeviceReady, false);
+        document
+                .addEventListener("deviceready", onDeviceReady, false)
 
         // more callback to handle Ad events
-        document.addEventListener('onReceiveAd', function(){
-        });
-        document.addEventListener('onFailedToReceiveAd', function(data){
-        });
-        document.addEventListener('onPresentAd', function(){
-        });
-        document.addEventListener('onDismissAd', function(){
-        });
-        document.addEventListener('onLeaveToAd', function(){
+                .addEventListener('onReceiveAd', function(){
+        })
+                .addEventListener('onFailedToReceiveAd', function(data){
+        })
+                .addEventListener('onPresentAd', function(){
+        })
+                .addEventListener('onDismissAd', function(){
+        })
+                .addEventListener('onLeaveToAd', function(){
         });
     }
     function createAd() {
@@ -125,7 +164,7 @@
                     {
                         'publisherId': adId,
                         'adSize': am.AD_SIZE.BANNER,
-                        'bannerAtTop': true
+                        'bannerAtTop': false
                     }, function() {
                         am.requestAd( { 'isTesting':true }, function() {
                             am.showAd( true );
@@ -190,9 +229,46 @@
         <a href="#" onclick="showConversions()">Conversions</a>
     </nav>
 
-    <div class="container">
+    <div id="rim" class="showRight">
+        <div id="keypad">
+            <div class="horizontal display">
+                <input id="displayPanel" type="text" value="0"/>
+            </div>
+            <div class="horizontal ">
+                <div id="keyC" data-rnc-tag="C" class="key control-key">C</div>
+                <div id="keyPlusMinus" class="key control-key">+/-</div>
+                <div id="keyPercent" class="key control-key">%</div>
+                <div id="keyDivide" class="key operation-key">/</div>
+            </div>
+            <div class="horizontal">
+                <div id="key7" data-rnc-tag="7" class="key">7</div>
+                <div id="key8" data-rnc-tag="8" class="key">8</div>
+                <div id="key9" data-rnc-tag="9" class="key">9</div>
+                <div id="keyMultiply" class="key operation-key">x</div>
+            </div>
+            <div class="horizontal">
+                <div id="key4" data-rnc-tag="4" class="key">4</div>
+                <div id="key5" data-rnc-tag="5" class="key">5</div>
+                <div id="key6" data-rnc-tag="6" class="key">6</div>
+                <div id="keySubtract" class="key operation-key">-</div>
+            </div>
+            <div class="horizontal">
+                <div id="key1" data-rnc-tag="1" class="key">1</div>
+                <div id="key2" data-rnc-tag="2" class="key">2</div>
+                <div id="key3" data-rnc-tag="3" class="key">3</div>
+                <div id="keyAdd" class="key operation-key">+</div>
+            </div>
+            <div class="horizontal">
+                <div id="key0" data-rnc-tag="0" class="key double-wide">0</div>
+                <div id="keyDecimalPoint" data-rnc-tag="." class="key">.</div>
+                <div id="keyEquals" class="key operation-key">=</div>
+            </div>
+        </div>
+    </div>
 
-        <div id="header">
+    <div id="container">
+
+        <div id="header" class="header">
                 <div id="showLeft"></div>
                 <img id="headerTitle" src="img/solvesAll.png">
                 <img id="showCalc" src="img/calc.png">
@@ -201,7 +277,7 @@
         <div class="main">
             <!--Solve:Quadratic Formula-->
             <h3 id="qF" class='title algebra'> Quadratic Formula </h3>
-            <div id='quadX' class="content" style="display: none">
+            <div id='quadX' class="content"  style="display:none">
 
                 b: <input id="b" type="text"><br>
                 a: <input id="a" type="text"><br>
@@ -217,7 +293,7 @@
 
             <!--Solve:Reference Angle-->
             <h3 id="rA" class='title algebra'> Reference Angle </h3>
-            <div id='referenceAngle' class="content" style="display: none">
+            <div id='referenceAngle' class="content"  style="display:none">
 
                 Angle: <input id='angle' type='text'><br>
                 <button type="button" onclick='refAngle()'>Solve</button>
@@ -228,7 +304,7 @@
 
             <!--Solve:Slope Intercept Formula-->
             <h3 id="sIY" class='title algebra'> Slope Intercept Formula</h3>
-            <div id='slopeIntercept' class="content" style="display: none">
+            <div id='slopeIntercept' class="content"  style="display:none">
 
                 m: <input id='slopeM' type='text'><br>
                 x: <input id='slopeX' type='text'><br>
@@ -242,7 +318,7 @@
 
             <!--Solve:Point Slope-->
             <h3 id="pS" class='title algebra'> Point Slope </h3>
-            <div id='pointSlope' class="content" style="display: none">
+            <div id='pointSlope' class="content"  style="display:none">
 
                 Coordinates for Point Number 1<br>
                 x1: <input id='pS_X1' type='text'><br>
@@ -258,7 +334,7 @@
 
             <!--Solve:Distance Between Two Linear Points-->
             <h3 id="dtp" class='title algebra'> Distance Between Two Points </h3>
-            <div id='distanceTwoPoints' class="content" style="display: none">
+            <div id='distanceTwoPoints' class="content"  style="display:none">
 
                 Coordinates for Point Number 1<br>
                 x1: <input id='dtp_X1' type='text'><br>
@@ -274,7 +350,7 @@
 
             <!--Factorial-->
             <h3 id="fac" class='title algebra'> Factorial </h3>
-            <div id='factorial' class="content" style="display: none">
+            <div id='factorial' class="content"  style="display:none">
 
                 Number to Calculate Factorial:<br>
                 <input id='f_N'type= 'text'><br>
@@ -286,7 +362,7 @@
 
             <!--Solve:Degrees and Radians-->
             <h3 id="dr" class='title physics conversions'> Degrees/Radians Converter </h3>
-            <div id='degreestoRadians' class="content" style="display: none">
+            <div id='degreestoRadians' class="content"  style="display:none">
 
                 Degrees: <input id='degRadD' type='text'><br>
                 <button type="button" onclick='solveDegreeRadian()'>Solve</button>
@@ -297,7 +373,7 @@
 
             <!--Solve:Percentage Error---->
             <h3 id="pE" class='title chemistry'> Percentage Error </h3>
-            <div id='percentageError' class="content" style="display: none">
+            <div id='percentageError' class="content"  style="display:none">
 
                 Your Value: <input id='pEaV' type='text'><br>
                 Exact Value: <input name='eV' id='pEeV' type='text'><br>
@@ -309,7 +385,7 @@
 
             <!--Solve:Interest-->
             <h3 id="int" class='title algebra'> Interest </h3>
-            <div id='interest' class="content" style="display: none">
+            <div id='interest' class="content"  style="display:none">
 
                 Days: <input id='i_D' type='text'><br>
                 Months: <input id='i_M' type='text'><br>
@@ -329,7 +405,7 @@
 
             <!--Solve:Distance Rate Time-->
             <h3 id="drt" class='title physics'> Distance Rate Time </h3>
-            <div id='DistanceRateTime_Rate' class="content" style="display: none">
+            <div id='DistanceRateTime_Rate' class="content"  style="display:none">
 
                 ENTER RATE OF SPEED:<br>
                 Feet: <input id='drt_F' type='text'><br>
@@ -344,7 +420,7 @@
 
             </div>
 
-            <div id='DistanceRateTime_Time' class="content" style="display: none">
+            <div id='DistanceRateTime_Time' class="content"  style="display:none">
 
                 ENTER TIME:<br>
                 Seconds: <input id='drt_TS' type='text'><br>
@@ -355,7 +431,7 @@
 
             </div>
 
-            <div id='DistanceRateTime_Distance' class="content" style="display: none">
+            <div id='DistanceRateTime_Distance' class="content"  style="display:none">
 
                 ENTER DISTANCE:<br>
                 Feet: <input id='drt_DF' type='text'><br>
@@ -366,7 +442,7 @@
 
             </div>
 
-            <div id='DistanceRateTime' class="content" style="display: none">
+            <div id='DistanceRateTime' class="content"  style="display:none">
 
                 CALCULATIONS:<br>
                 Distance(miles): <input id='drt_D' type='text'><br>
@@ -380,7 +456,7 @@
 
             <!--Solve:Mass Converter-->
             <h3 id="mc" class='title conversions' > Mass Conversions </h3>
-            <div id='mConverter' class="content" style="display: none">
+            <div id='mConverter' class="content"  style="display:none">
 
                 From:
                 <select name="mC_Unit1" id="mC_U1">
@@ -430,7 +506,7 @@
 
             <!--Solve:Volume Converter-->
             <h3 id="vc" class='title conversions' > Volume Conversions </h3>
-            <div id='vConverter' class="content" style="display: none">
+            <div id='vConverter' class="content"  style="display:none">
 
                 From:
                 <select name="vC_Unit1" id="vC_U1">
@@ -480,7 +556,7 @@
 
             <!--Solve:Time Converter-->
             <h3 id="timec" class='title conversions' > Time Conversions </h3>
-            <div id='timeConverter' class="content" style="display:none">
+            <div id='timeConverter' class="content"  style="display:none"style="display:none">
 
                 From:
                 <select name="timeC_Unit1" id="timeC_U1">
@@ -514,7 +590,7 @@
 
             <!--Solve:Temperature Converter-->
             <h3 id="tempc" class='title conversions' > Temp Conversions </h3>
-            <div id='tempConverter' class="content" style="display: none">
+            <div id='tempConverter' class="content"  style="display:none">
 
                 From:
                 <select name="tempC_Unit1" id="tempC_U1">
@@ -550,7 +626,7 @@
 
             <!--Solve:Distance Converter-->
             <h3 id="dc" class='title  conversions' > Distance Conversions </h3>
-            <div id='dConverter' class="content" style="display: none">
+            <div id='dConverter' class="content"  style="display:none">
 
                 From:
                 <select name="dC_Unit1" id="dC_U1">
@@ -617,53 +693,5 @@
         </div>
     </div>
 
-    <!-- Calculator -->
-    <div id="calc">
-        <form>
-            <input name="display" value="0" size=25 style="width:auto;" >
-            <br>
-            <input type="button" value="   exp  " onClick="if (checkNum(this.form.display.value))
-    { exp(this.form) }">
-            <input type="button" value="    7    " onClick="addChar(this.form.display, '7')">
-            <input type="button" value="    8    " onClick="addChar(this.form.display, '8')">
-            <input type="button" value="    9    " onClick="addChar(this.form.display, '9')">
-            <input type="button" value="    /    " onClick="addChar(this.form.display, '/')">
-            <br>
-            <input type="button" value="    ln    " onClick="if (checkNum(this.form.display.value))
-    { ln(this.form) }">
-            <input type="button" value="    4    " onClick="addChar(this.form.display, '4')">
-            <input type="button" value="    5    " onClick="addChar(this.form.display, '5')">
-            <input type="button" value="    6    " onClick="addChar(this.form.display, '6')">
-            <input type="button" value="    *    " onClick="addChar(this.form.display, '*')">
-            <br>
-            <input type="button" value="   sqrt  " onClick="if (checkNum(this.form.display.value))
-    { sqrt(this.form) }">
-            <input type="button" value="    1    " onClick="addChar(this.form.display, '1')">
-            <input type="button" value="    2    " onClick="addChar(this.form.display, '2')">
-            <input type="button" value="    3    " onClick="addChar(this.form.display, '3')">
-            <input type="button" value="    -    " onClick="addChar(this.form.display, '-')">
-            <br>
-            <input type="button" value="    sq   " onClick="if (checkNum(this.form.display.value))
-    { square(this.form) }">
-            <input type="button" value="   0     " onClick="addChar(this.form.display, '0')">
-            <input type="button" value="    .    " onClick="addChar(this.form.display, '.')">
-            <input type="button" value="   +/-   " onClick="changeSign(this.form.display)">
-            <input type="button" value="    +    " onClick="addChar(this.form.display, '+')">
-            <br>
-            <input type="button" value="    (    " onClick="addChar(this.form.display, '(')">
-            <input type="button" value="   cos   " onClick="if (checkNum(this.form.display.value))
-    { cos(this.form) }">
-            <input type="button" value="   sin   " onClick="if (checkNum(this.form.display.value))
-    { sin(this.form) }">
-            <input type="button" value="   tan   " onClick="if (checkNum(this.form.display.value))
-    { tan(this.form) }">
-            <input type="button" value="    )    " onClick="addChar(this.form.display, ')')">
-            <br>
-            <input type="button" style="width:auto;" value="  Clear  " onClick="this.form.display.value = 0 ">
-            <input type="button" style="width:auto;" value=" Back Space  " onClick="deleteChar(this.form.display)">
-            <input type="button" style="width:auto;" value="   Enter    " name="enter" onClick="if (checkNum(this.form.display.value))
-    { compute(this.form) }">
-        </form>
-    </div>
 </body>
 </html>

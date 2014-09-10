@@ -12,7 +12,6 @@ body {
     padding: 0;
     margin: 0;
     text-align: center;
-    /*zoom: 210%;*/
     overflow-x: hidden;
 }
 
@@ -24,6 +23,14 @@ input{
     border:1px solid #47a4da;
     background-color:#ffffff;
     color:#47a4da;
+    margin-bottom: 4px;
+}
+
+#container{
+    position: relative;
+    -webkit-transition: all 0.3s ease;
+    -moz-transition: all 0.3s ease;
+    transition: all 0.3s ease;
 }
 
 .title{
@@ -32,10 +39,10 @@ input{
     padding-bottom: 10px;
     padding-top: 10px;
     margin: 0px;
-    /*font-size: 150% !important;*/
     display: block;
     cursor:pointer;
 }
+
 .content{
     border: 1px solid;
     padding: 5px;
@@ -43,22 +50,29 @@ input{
     margin: 15px auto;
     display: inline-block;
     text-align: left;
-    /*font-size: 200%;*/
 }
 
 #header{
     position: fixed;
+    width: 100%;
+    height: 50px;
+    background-color: #258ECD;
+    -webkit-transition: all 0.3s ease;
+    -moz-transition: all 0.3s ease;
+    transition: all 0.3s ease;
+}
+.header{
     top: 0;
     left: 0;
-    width: 100%;
-    height: 72px;
-    background-color: #258ECD;
+    -webkit-transition: all 0.3s ease;
+    -moz-transition: all 0.3s ease;
+    transition: all 0.3s ease;
 }
 
 #headerTitle{
-    height: 50px;
-    margin: 10px auto;
-    width: 200px;
+    height: 38px;
+    margin: 5px auto;
+    width: 175px;
 }
 
 button{
@@ -95,8 +109,8 @@ a{
 }
 
 #menuTitleImg{
-    height: 55px;
-    margin: 10px auto;
+    height: 40px;
+    margin: 5px auto;
 }
 
 #menuTitle{
@@ -109,24 +123,12 @@ a{
     background-image:  url('../img/menu.png');
     background-position: 0,0;
     background-repeat: no-repeat;
-    background-size: 40px, 40px;
-    height: 40px;
-    width: 40px;
+    background-size: 30px, 30px;
+    height: 30px;
+    width: 30px;
     position: absolute;
-    left: 15px;
-    top: 15px;
-}
-
-.inline{
-    border: 1px solid;
-    padding: 5px;
-    margin: 15px auto;
-    display:inline-block;
-    -webkit-transition: all 0.3s linear;
-    -moz-transition: all 0.3s linear;
-    -o-transition: all 0.3s linear;
-    -ms-transition: all 0.3s linear;
-    transition: all 0.3s linear;
+    left: 10px;
+    top: 10px;
 }
 
 .customSelect {
@@ -165,3 +167,4 @@ option:focus{
 *{
     -webkit-tap-highlight-color: transparent;
 }
+
